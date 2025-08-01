@@ -1,10 +1,14 @@
 # Dougless Runtime
 
-A custom JavaScript runtime built in Go, designed to provide high-performance JavaScript execution with Node.js-compatible APIs for file I/O, networking, async operations, and WebSocket support.
+A custom JavaScript runtime built in Go, designed to serve as the foundation for a custom full-stack framework powered by WebSockets. Built with the Goja engine and featuring ES6+ transpilation capabilities.
 
 ## Overview
 
-Dougless Runtime aims to combine the simplicity and performance of Go with the flexibility of JavaScript, creating a runtime that's both fast and developer-friendly. Built on top of the Goja JavaScript engine, it provides a clean, maintainable codebase with excellent JavaScript interoperability.
+Dougless Runtime is a custom runtime designed with the end goal of serving a custom full-stack framework powered by WebSockets. It's not inherently compatible with everything Node.js supports as it represents a new paradigm. This includes a custom system for building plugins to extend the framework. Built on top of the Goja JavaScript engine, Dougless Runtime provides a clean, maintainable codebase with excellent JavaScript interoperability.
+
+In addition to the Goja engine, we are introducing a build-time tool that will compile ES6+ into ES5, enhancing compatibility and performance.
+
+For more information on how esbuild integrates with Go, visit [esbuild Go API](https://pkg.go.dev/github.com/evanw/esbuild/pkg/api).
 
 ## Features (Planned)
 
@@ -143,10 +147,11 @@ This project is in early development. Contributions, ideas, and feedback are wel
 - **HTTP Throughput**: > 10,000 requests/second
 - **File I/O**: Comparable to Node.js performance
 
-### Compatibility Goals
-- Execute Node.js-compatible JavaScript applications
-- Pass 80%+ of Node.js core module tests
-- Support major JavaScript frameworks (Express.js basics)
+### Framework Goals
+- Serve as the foundation for a WebSocket-powered full-stack framework
+- Provide a custom plugin system for extending framework capabilities
+- Support ES6+ JavaScript through build-time transpilation to ES5
+- Create a new paradigm for web development focused on real-time communication
 
 ---
 
