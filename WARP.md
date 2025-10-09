@@ -29,6 +29,14 @@ GOOS=windows GOARCH=amd64 go build -o dougless-windows.exe cmd/dougless/main.go
 
 # Run with Go directly (without building)
 go run cmd/dougless/main.go examples/hello.js
+
+# Start REPL mode (interactive JavaScript shell)
+./dougless
+
+# REPL commands
+# .help   - Show available commands
+# .exit   - Exit the REPL
+# .clear  - Clear the screen
 ```
 
 ### Testing
@@ -105,9 +113,17 @@ The runtime consists of several interconnected components that work together to 
    - Module caching to prevent re-execution
    - Placeholder implementations for fs, http, and path modules
 
-4. **CLI Entry Point** (`cmd/dougless/main.go`)
-   - Simple command-line interface
-   - Script file execution
+4. **REPL** (`internal/repl/repl.go`)
+   - Interactive JavaScript shell
+   - Multi-line input support (automatic detection)
+   - Special commands (.help, .exit, .clear)
+   - Maintains state between evaluations
+   - Proper error handling and display
+
+5. **CLI Entry Point** (`cmd/dougless/main.go`)
+   - Dual-mode operation: REPL or file execution
+   - REPL mode when no arguments provided
+   - Script file execution mode with file argument
    - Error handling and reporting
 
 ### Module Architecture
@@ -136,7 +152,9 @@ Tasks can be scheduled with delays (timers) or executed immediately. The loop co
 
 ## Development Status
 
-Currently in **Phase 1** (Foundation) - Nearly Complete:
+**Phase 1 (Foundation) - COMPLETE ✅**
+
+All Phase 1 objectives have been successfully implemented:
 
 ### Completed ✅
 - ✅ Basic project structure and Go module setup
@@ -154,12 +172,15 @@ Currently in **Phase 1** (Foundation) - Nearly Complete:
   - console.log/error/warn for output
   - console.time/timeEnd for performance measurement
   - console.table for structured data visualization
+- ✅ Error handling improvements (stack traces, uncaught exceptions)
+- ✅ Testing infrastructure (unit, integration, benchmarks)
+- ✅ Interactive REPL (Read-Eval-Print Loop)
+  - Multi-line input support
+  - State preservation between commands
+  - Special REPL commands (.help, .exit, .clear)
+  - Proper error display
 
-### In Progress ⏳
-- Error handling improvements (stack traces, uncaught exceptions)
-- Testing infrastructure (unit, integration, benchmarks)
-
-### Up Next (Phase 2)
+### Currently Starting: Phase 2 (File System & Modules)
 - Path module implementation
 - File system operations (sync and async)
 - Module system enhancements

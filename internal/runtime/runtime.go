@@ -355,3 +355,7 @@ func (rt *Runtime) requireFunction(call goja.FunctionCall) goja.Value {
 
 	return module.Export(rt.vm)
 }
+
+func (r *Runtime) Evaluate(code string) (goja.Value, error) {
+  return r.vm.RunString(code)
+}

@@ -70,9 +70,10 @@ func (l *Loop) Stop() {
 	l.cancel()
 	l.running = false
 	
-	// Clean up timers
+	// Clean up timers and decrement WaitGroup for each pending timer
 	for _, timer := range l.timers {
 		timer.Stop()
+		l.wg.Done() // Decrement for the pending task that won't execute
 	}
 	l.timers = make(map[string]*time.Timer)
 }

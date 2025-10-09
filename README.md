@@ -44,6 +44,13 @@ This project is in early development (Phase 1 - Foundation). Currently implement
 - ✅ `console.time()` / `console.timeEnd()` - Performance measurement
 - ✅ `console.table()` - Structured data visualization with table formatting
 
+### REPL (Interactive Shell) ✅
+- ✅ Interactive JavaScript evaluation
+- ✅ Multi-line input support (automatic detection)
+- ✅ State preservation between commands
+- ✅ Special commands (`.help`, `.exit`, `.clear`)
+- ✅ Proper error handling and display
+
 ### Next Up (Phase 2)
 - ⏳ File system operations (fs module)
 - ⏳ Path manipulation utilities (path module)
@@ -67,7 +74,10 @@ go mod tidy
 # Build the runtime
 go build -o dougless cmd/dougless/main.go
 
-# Run a JavaScript file
+# Start interactive REPL mode
+./dougless
+
+# Or run a JavaScript file
 ./dougless examples/hello.js
 ```
 
@@ -78,6 +88,7 @@ dougless-runtime/
 ├── cmd/dougless/           # CLI entry point
 ├── internal/
 │   ├── runtime/           # Core runtime logic
+│   ├── repl/              # Interactive REPL implementation
 │   ├── modules/           # Built-in modules (fs, http, path, etc.)
 │   ├── event/             # Event loop implementation
 │   └── bindings/          # Go-JS bindings and utilities
@@ -92,6 +103,7 @@ dougless-runtime/
 ### Planning & Architecture
 - **[Project Plan](docs/project_plan.md)** - Comprehensive development roadmap with 8 phases, technical architecture details, and success metrics
 - **[Transpilation Strategy](docs/transpilation_strategy.md)** - Strategy for supporting modern ES6+ JavaScript syntax through transpilation to ES5
+- **[REPL Guide](docs/repl_guide.md)** - Complete guide to using the interactive REPL shell
 - **[Changelog](CHANGELOG.md)** - Detailed history of changes, features, and improvements
 
 ### Development Phases
