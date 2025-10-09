@@ -84,6 +84,7 @@ func (l *Loop) Wait() {
 
 // ScheduleTask schedules a task to be executed
 func (l *Loop) ScheduleTask(task *Task) {
+  l.wg.Add(1) // track pending task when it's scheduled to account for delayed tasks (ex: setTimeout)
 	if task.Delay > 0 {
 		l.scheduleDelayedTask(task)
 	} else {
@@ -97,7 +98,8 @@ func (l *Loop) scheduleDelayedTask(task *Task) {
 		l.tasks <- task
 		
 		if task.Interval {
-			// Reschedule for intervals
+			// add to waitgroup and reschedule for intervals
+      l.wg.Add(1)
 			l.scheduleDelayedTask(task)
 		} else {
 			// Remove from timers map for one-time tasks
@@ -120,12 +122,12 @@ func (l *Loop) ClearTimer(id string) {
 	if timer, exists := l.timers[id]; exists {
 		timer.Stop()
 		delete(l.timers, id)
+    l.wg.Done()
 	}
 }
 
 // executeTask executes a task
 func (l *Loop) executeTask(task *Task) {
-	l.wg.Add(1)
 	go func() {
 		defer l.wg.Done()
 		task.Callback()

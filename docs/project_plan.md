@@ -43,14 +43,14 @@ dougless-runtime/
 - [x] Set up basic runtime structure
 
 #### 1.2 Core Runtime
-- [ ] **Event Loop Implementation**
-  - Task scheduling with priorities
-  - Timer management (setTimeout/setInterval)
-  - Proper cleanup and graceful shutdown
-- [ ] **Console Operations**
-  - Enhanced console.log with formatting
-  - console.time/timeEnd for performance measurement
-  - console.table for structured data
+- [x] **Event Loop Implementation**
+  - [x] Task scheduling with Go channels and goroutines
+  - [x] Timer management (setTimeout/setInterval/clearTimeout/clearInterval)
+  - [x] Proper cleanup and graceful shutdown with WaitGroup synchronization
+- [x] **Console Operations**
+  - [x] Basic console.log/error/warn with formatting
+  - [x] console.time/timeEnd for performance measurement
+  - [x] console.table for structured data visualization
 - [ ] **Error Handling**
   - Stack trace preservation
   - Proper error propagation from Go to JS
