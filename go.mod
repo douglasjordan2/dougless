@@ -1,4 +1,4 @@
-module github.com/douglasjordan/dougless-runtime
+module github.com/douglasjordan2/dougless
 
 go 1.21
 

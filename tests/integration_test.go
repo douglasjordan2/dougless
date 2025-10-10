@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/douglasjordan/dougless-runtime/internal/runtime"
+	"github.com/douglasjordan2/dougless/internal/runtime"
 )
 
 // TestCompleteJavaScriptProgram tests a realistic multi-feature JavaScript program

@@ -9,8 +9,8 @@ import (
 	"github.com/dop251/goja"
 	"github.com/google/uuid"
 
-	"github.com/douglasjordan/dougless-runtime/internal/event"
-	"github.com/douglasjordan/dougless-runtime/internal/modules"
+	"github.com/douglasjordan2/dougless/internal/event"
+	"github.com/douglasjordan2/dougless/internal/modules"
 )
 
 // Runtime represents the JavaScript execution environment

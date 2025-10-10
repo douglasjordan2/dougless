@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/douglasjordan/dougless-runtime/internal/runtime"
-	"github.com/douglasjordan/dougless-runtime/internal/repl"
+	"github.com/douglasjordan2/dougless/internal/runtime"
+	"github.com/douglasjordan2/dougless/internal/repl"
 )
 
 func main() {

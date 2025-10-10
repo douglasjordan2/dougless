@@ -7,7 +7,7 @@ import (
   "strings"
 
   "github.com/dop251/goja"
-  "github.com/douglasjordan/dougless-runtime/internal/runtime"
+  "github.com/douglasjordan2/dougless/internal/runtime"
 )
 
 type REPL struct {
@@ -85,7 +85,7 @@ func (r *REPL) Run() error {
     line, err := r.reader.ReadString('\n')
     if err != nil {
       if err == io.EOF {
-        fmt.Fprintln(r.writer, "\nGoodbye!")
+        fmt.Fprintln(r.writer, "\nSee ya")
         return nil
       }
       return err
