@@ -23,7 +23,7 @@ For more information on how esbuild integrates with Go, visit [esbuild Go API](h
 
 ## Current Status
 
-This project is in early development (Phase 1 - Foundation). Currently implemented:
+Phase 1 (Foundation) and Phase 2 (File System & Modules) are complete! Currently implemented:
 
 ### Core Infrastructure ✅
 - ✅ Basic project structure and Go module setup
@@ -51,11 +51,29 @@ This project is in early development (Phase 1 - Foundation). Currently implement
 - ✅ Special commands (`.help`, `.exit`, `.clear`)
 - ✅ Proper error handling and display
 
-### Next Up (Phase 2)
-- ⏳ File system operations (fs module)
-- ⏳ Path manipulation utilities (path module)
-- ⏳ Enhanced error handling with stack traces
-- ⏳ Unit and integration tests
+### Path Module ✅
+- ✅ `path.join()` - Join path segments
+- ✅ `path.resolve()` - Resolve absolute paths
+- ✅ `path.dirname()` - Get directory name
+- ✅ `path.basename()` - Get file name
+- ✅ `path.extname()` - Get file extension
+- ✅ `path.sep` - OS-specific path separator
+
+### File Module ✅ (Unique Global API)
+- ✅ `file.read()` - Read file contents
+- ✅ `file.write()` - Write data to file
+- ✅ `file.readdir()` - List directory contents
+- ✅ `file.exists()` - Check if path exists
+- ✅ `file.mkdir()` - Create directory
+- ✅ `file.rmdir()` - Remove directory
+- ✅ `file.unlink()` - Delete file
+- ✅ `file.stat()` - Get file/directory information
+- ✅ Global access (no `require()` needed!)
+
+### Next Up (Phase 3)
+- ⏳ HTTP client and server
+- ⏳ WebSocket support
+- ⏳ Network utilities
 
 ## Quick Start
 
@@ -81,6 +99,42 @@ go build -o dougless cmd/dougless/main.go
 ./dougless examples/hello.js
 ```
 
+## Unique Dougless Features
+
+Dougless has a unique API that sets it apart from Node.js, Deno, and Bun:
+
+### Global File System Access
+Unlike Node.js which requires `const fs = require('fs')`, Dougless provides the `file` object globally:
+
+```javascript
+// No require needed!
+file.read('data.txt', function(err, data) {
+    if (err) {
+        console.error('Error:', err);
+    } else {
+        console.log('Content:', data);
+    }
+});
+
+file.write('output.txt', 'Hello Dougless!', function(err) {
+    if (err) console.error(err);
+});
+```
+
+### Simplified Method Names
+- `file.read()` instead of `fs.readFile()`
+- `file.write()` instead of `fs.writeFile()`
+- Clean, intuitive API design
+
+### Always Available Globals
+```javascript
+console.log('Logging');          // ✅ Built-in
+file.read('file.txt', callback); // ✅ Built-in
+setTimeout(callback, 1000);      // ✅ Built-in
+
+var path = require('path');      // Module system still available
+```
+
 ## Project Structure
 
 ```
@@ -104,6 +158,7 @@ dougless-runtime/
 - **[Project Plan](docs/project_plan.md)** - Comprehensive development roadmap with 8 phases, technical architecture details, and success metrics
 - **[Transpilation Strategy](docs/transpilation_strategy.md)** - Strategy for supporting modern ES6+ JavaScript syntax through transpilation to ES5
 - **[REPL Guide](docs/repl_guide.md)** - Complete guide to using the interactive REPL shell
+- **[File API Guide](docs/file_api.md)** - Complete reference for the global `file` API with examples
 - **[Changelog](CHANGELOG.md)** - Detailed history of changes, features, and improvements
 
 ### Development Phases

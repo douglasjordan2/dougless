@@ -82,7 +82,11 @@ func (rt *Runtime) initializeGlobals() {
 	console.Set("table", rt.consoleTable)
 	rt.vm.Set("console", console)
 
-	// setTimeout and setInterval (basic implementation)
+	// File system - global access (unique to Dougless)
+	fileSystem := modules.NewFileSystem(rt.eventLoop)
+	rt.vm.Set("file", fileSystem.Export(rt.vm))
+
+	// Timers
 	rt.vm.Set("setTimeout", rt.setTimeout)
 	rt.vm.Set("setInterval", rt.setInterval)
 	rt.vm.Set("clearTimeout", rt.clearTimeout)
@@ -91,10 +95,9 @@ func (rt *Runtime) initializeGlobals() {
 
 // initializeModules registers built-in modules
 func (rt *Runtime) initializeModules() {
-	// Register built-in modules
-	rt.modules.Register("fs", modules.NewFileSystem())
-	rt.modules.Register("http", modules.NewHTTP())
+	// Register built-in modules (for require() support)
 	rt.modules.Register("path", modules.NewPath())
+	// TODO: Add more modules here (http, crypto, etc.)
 	
 	// Set up require function
 	rt.vm.Set("require", rt.requireFunction)
