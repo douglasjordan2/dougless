@@ -444,9 +444,10 @@ func TestClearTimeout(t *testing.T) {
 func TestModuleRequire(t *testing.T) {
 	rt := New()
 	
-	t.Run("require fs module", func(t *testing.T) {
+	t.Run("global file API available", func(t *testing.T) {
 		script := `
-			var fs = require('fs');
+			// File system is globally available (not via require)
+			var fileAvailable = typeof file === 'object';
 		`
 		
 		err := rt.Execute(script, "test.js")
@@ -454,20 +455,22 @@ func TestModuleRequire(t *testing.T) {
 			t.Fatalf("Execute() error = %v", err)
 		}
 		
-		// Verify the module was loaded
-		result, err := rt.vm.RunString("typeof fs")
+		// Verify the global file object is available
+		result, err := rt.vm.RunString("fileAvailable")
 		if err != nil {
-			t.Fatalf("Failed to check fs type: %v", err)
+			t.Fatalf("Failed to check file availability: %v", err)
 		}
 		
-		if result.String() != "object" {
-			t.Errorf("require('fs') should return an object, got %s", result.String())
+		if !result.ToBoolean() {
+			t.Error("global 'file' object should be available")
 		}
 	})
 	
-	t.Run("require http module", func(t *testing.T) {
+	t.Run("file API has expected methods", func(t *testing.T) {
 		script := `
-			var http = require('http');
+			var hasRead = typeof file.read === 'function';
+			var hasWrite = typeof file.write === 'function';
+			var hasExists = typeof file.exists === 'function';
 		`
 		
 		err := rt.Execute(script, "test.js")
@@ -475,13 +478,19 @@ func TestModuleRequire(t *testing.T) {
 			t.Fatalf("Execute() error = %v", err)
 		}
 		
-		result, err := rt.vm.RunString("typeof http")
-		if err != nil {
-			t.Fatalf("Failed to check http type: %v", err)
-		}
+		// Check each method
+		hasRead, _ := rt.vm.RunString("hasRead")
+		hasWrite, _ := rt.vm.RunString("hasWrite")
+		hasExists, _ := rt.vm.RunString("hasExists")
 		
-		if result.String() != "object" {
-			t.Errorf("require('http') should return an object, got %s", result.String())
+		if !hasRead.ToBoolean() {
+			t.Error("file.read should be a function")
+		}
+		if !hasWrite.ToBoolean() {
+			t.Error("file.write should be a function")
+		}
+		if !hasExists.ToBoolean() {
+			t.Error("file.exists should be a function")
 		}
 	})
 	

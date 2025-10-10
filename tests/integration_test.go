@@ -52,21 +52,24 @@ func TestCompleteJavaScriptProgram(t *testing.T) {
 		console.log('✓ clearTimeout function available:', typeof clearTimeout === 'function');
 		console.log('✓ clearInterval function available:', typeof clearInterval === 'function');
 		
-		// 6. Module system test
-		var fs = require('fs');
-		var http = require('http');
-		var path = require('path');
+		// 5. File system and module test
+		// File system is globally available (unique to Dougless)
+		if (typeof file === 'object') {
+			console.log('✓ file global API available');
+		}
+		if (typeof file.read === 'function') {
+			console.log('✓ file.read available');
+		}
+		if (typeof file.write === 'function') {
+			console.log('✓ file.write available');
+		}
 		
-		// Verify modules loaded
-		if (typeof fs === 'object') {
-			console.log('✓ fs module loaded');
-		}
-		if (typeof http === 'object') {
-			console.log('✓ http module loaded');
-		}
+		// Module system (require)
+		var path = require('path');
 		if (typeof path === 'object') {
-			console.log('✓ path module loaded');
+			console.log('✓ path module loaded via require');
 		}
+		// Note: http module will be added in Phase 3
 		
 		console.timeEnd('total-execution');
 		console.log('=== Test Completed ===');
@@ -103,9 +106,10 @@ func TestCompleteJavaScriptProgram(t *testing.T) {
 		"✓ setInterval function available:",
 		"✓ clearTimeout function available:",
 		"✓ clearInterval function available:",
-		"✓ fs module loaded",
-		"✓ http module loaded",
-		"✓ path module loaded",
+		"✓ file global API available",
+		"✓ file.read available",
+		"✓ file.write available",
+		"✓ path module loaded via require",
 		"=== Test Completed ===",
 	}
 	
@@ -296,43 +300,41 @@ func TestConsoleOperationsIntegration(t *testing.T) {
 	}
 }
 
-// TestModuleSystemIntegration tests the require() module system
+// TestModuleSystemIntegration tests the module system and global APIs
 func TestModuleSystemIntegration(t *testing.T) {
 	rt := runtime.New()
 	
 	script := `
-		// Load all built-in modules
-		var fs = require('fs');
-		var http = require('http');
+		// Test global file API (unique to Dougless - not via require)
+		if (typeof file !== 'object') {
+			console.error('file global API not available');
+		}
+		
+		if (typeof file.read !== 'function') {
+			console.error('file.read not a function');
+		}
+		
+		if (typeof file.write !== 'function') {
+			console.error('file.write not a function');
+		}
+		
+		if (typeof file.exists !== 'function') {
+			console.error('file.exists not a function');
+		}
+		
+		// Test require() module system
 		var path = require('path');
 		
-		// Verify modules have expected structure
-		var allModulesLoaded = true;
-		
-		if (typeof fs !== 'object') {
-			allModulesLoaded = false;
-		}
-		
-		if (typeof http !== 'object') {
-			allModulesLoaded = false;
-		}
-		
 		if (typeof path !== 'object') {
-			allModulesLoaded = false;
-		}
-		
-		// Try to use module functions (currently placeholders)
-		if (typeof fs.readFile !== 'function') {
-			console.warn('fs.readFile not a function');
-		}
-		
-		if (typeof http.createServer !== 'function') {
-			console.warn('http.createServer not a function');
+			console.error('path module not loaded');
 		}
 		
 		if (typeof path.join !== 'function') {
-			console.warn('path.join not a function');
+			console.error('path.join not a function');
 		}
+		
+		// HTTP module will be added in Phase 3
+		console.log('Module system test passed');
 	`
 	
 	err := rt.Execute(script, "module_integration.js")
