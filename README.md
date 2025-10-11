@@ -1,6 +1,6 @@
 # Dougless Runtime
 
-A custom JavaScript runtime built in Go, designed to serve as the foundation for a custom full-stack framework powered by WebSockets.
+A custom JavaScript runtime built in Go, designed to eventually serve as the foundation for a custom full-stack framework (but that's a half-baked idea tbh).
 
 ## Overview
 
@@ -291,7 +291,7 @@ This project is in early development. Contributions, ideas, and feedback are wel
 - **File I/O**: Comparable to Node.js performance
 
 ### Framework Goals
-- Serve as the foundation for a WebSocket-powered full-stack framework
+- Serve as the foundation for a full-stack framework
 - Provide a custom plugin system for extending framework capabilities
 - Create a new paradigm for web development focused on real-time communication
 - Globals-first API design for simplicity and developer experience
