@@ -1,25 +1,25 @@
 # Dougless Runtime
 
-A custom JavaScript runtime built in Go, designed to serve as the foundation for a custom full-stack framework powered by WebSockets. Built with the Goja engine and featuring ES6+ transpilation capabilities.
+A custom JavaScript runtime built in Go, designed to serve as the foundation for a custom full-stack framework powered by WebSockets.
 
 ## Overview
 
-Dougless Runtime is a custom runtime designed with the end goal of serving a custom full-stack framework powered by WebSockets. It's not inherently compatible with everything Node.js supports as it represents a new paradigm. This includes a custom system for building plugins to extend the framework. Built on top of the Goja JavaScript engine, Dougless Runtime provides a clean, maintainable codebase with excellent JavaScript interoperability.
+Dougless Runtime is a custom runtime designed with the end goal of serving a custom full-stack framework powered by WebSockets. It's not inherently compatible with everything Node.js supports as it represents a new paradigm. This includes a custom system for building plugins to extend the framework. Built on top of the Goja JavaScript engine (ES5.1), Dougless Runtime provides a clean, maintainable codebase with excellent JavaScript interoperability and a unique globals-first API design.
 
-In addition to the Goja engine, we are introducing a build-time tool that will compile ES6+ into ES5, enhancing compatibility and performance.
+## Features
 
-For more information on how esbuild integrates with Go, visit [esbuild Go API](https://pkg.go.dev/github.com/evanw/esbuild/pkg/api).
-
-## Features (Planned)
-
-- 🚀 **High-performance JavaScript execution** using Goja (pure Go)
-- 📁 **File I/O operations** with both sync and async APIs
-- 🌐 **HTTP client and server** support
-- 🔌 **WebSocket** implementation for real-time applications
+- 🚀 **High-performance JavaScript execution** using Goja (pure Go, ES5.1)
+- ✅ **File I/O operations** with async callback APIs
+- ✅ **HTTP client and server** support
+- 🌐 **Global-first API** - core functionality available without require()
 - ⚡ **Event loop** with proper async operation handling
-- 📦 **CommonJS module system** with built-in modules
+- 📦 **CommonJS module system** for additional modules
+
+### Planned
+- 🔌 **WebSocket** implementation for real-time applications
 - 🔒 **Crypto utilities** and security features
 - 🛠️ **Process management** and system integration
+- 🎯 **ES6+ support** through transpilation (future phases)
 
 ## Current Status
 
@@ -201,16 +201,16 @@ dougless-runtime/
 
 ### Planning & Architecture
 - **[Project Plan](docs/project_plan.md)** - Comprehensive development roadmap with 8 phases, technical architecture details, and success metrics
-- **[Transpilation Strategy](docs/transpilation_strategy.md)** - Strategy for supporting modern ES6+ JavaScript syntax through transpilation to ES5
 - **[REPL Guide](docs/repl_guide.md)** - Complete guide to using the interactive REPL shell
 - **[File API Guide](docs/file_api.md)** - Complete reference for the global `file` API with examples
+- **[HTTP Design](docs/http_design.md)** - HTTP module design and implementation details
 - **[Changelog](CHANGELOG.md)** - Detailed history of changes, features, and improvements
 
 ### Development Phases
-1. **Foundation** (Current) - Basic runtime with console operations and timers
-2. **File System & Modules** - File I/O and robust module system
-3. **Networking & HTTP** - HTTP client/server capabilities
-4. **WebSockets & Real-time** - WebSocket implementation
+1. **Foundation** ✅ - Basic runtime with console operations and timers
+2. **File System & Modules** ✅ - File I/O and robust module system
+3. **Networking & HTTP** ✅ - HTTP client/server capabilities
+4. **WebSockets & Real-time** (Current) - WebSocket implementation
 5. **Advanced Async & Promises** - Promise support and async/await
 6. **Crypto & Security** - Cryptographic functions and security features
 7. **Process & System Integration** - System-level operations
@@ -222,9 +222,8 @@ dougless-runtime/
 - **[Goja](https://github.com/dop251/goja)** - Pure Go JavaScript engine (ES5.1)
 - **Go standard library** - For system operations, networking, and crypto
 
-### Potential Future Dependencies
-- **[esbuild Go API](https://pkg.go.dev/github.com/evanw/esbuild/pkg/api)** - For ES6+ transpilation
-- **[gorilla/websocket](https://github.com/gorilla/websocket)** - WebSocket implementation
+### Planned Dependencies
+- **[gorilla/websocket](https://github.com/gorilla/websocket)** - WebSocket implementation (Phase 4)
 
 ## Inspiration & References
 
@@ -294,8 +293,8 @@ This project is in early development. Contributions, ideas, and feedback are wel
 ### Framework Goals
 - Serve as the foundation for a WebSocket-powered full-stack framework
 - Provide a custom plugin system for extending framework capabilities
-- Support ES6+ JavaScript through build-time transpilation to ES5
 - Create a new paradigm for web development focused on real-time communication
+- Globals-first API design for simplicity and developer experience
 
 ---
 
