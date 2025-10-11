@@ -4,7 +4,7 @@ A custom JavaScript runtime built in Go, designed to serve as the foundation for
 
 ## Overview
 
-Dougless Runtime is a custom runtime designed with the end goal of serving a custom full-stack framework powered by WebSockets. It's not inherently compatible with everything Node.js supports as it represents a new paradigm. This includes a custom system for building plugins to extend the framework. Built on top of the Goja JavaScript engine (ES5.1), Dougless Runtime provides a clean, maintainable codebase with excellent JavaScript interoperability and a unique globals-first API design.
+Dougless Runtime is a custom runtime designed with the end goal of serving a custom full-stack framework. Built on top of the Goja JavaScript engine (ES5.1), Dougless Runtime provides a clean, maintainable codebase with excellent JavaScript interoperability and a unique globals-first API design.
 
 ## Features
 
