@@ -82,9 +82,13 @@ func (rt *Runtime) initializeGlobals() {
 	console.Set("table", rt.consoleTable)
 	rt.vm.Set("console", console)
 
-	// File system - global access (unique to Dougless)
+	// File system
 	fileSystem := modules.NewFileSystem(rt.eventLoop)
 	rt.vm.Set("file", fileSystem.Export(rt.vm))
+
+  // HTTP
+  httpClient := modules.NewHTTP(rt.eventLoop)
+  rt.vm.Set("http", httpClient.Export(rt.vm))
 
 	// Timers
 	rt.vm.Set("setTimeout", rt.setTimeout)

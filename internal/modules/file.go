@@ -164,7 +164,7 @@ func (fs *FileSystem) mkdir(call goja.FunctionCall) goja.Value {
   path := call.Arguments[0].String()
   callback, ok := goja.AssertFunction(call.Arguments[1])
   if !ok {
-    panic(fs.vm.ToValue("second argument must be a callback function"))
+    panic(fs.vm.ToValue("second argument must bu a callback function"))
   }
 
   fs.eventLoop.ScheduleTask(&event.Task{

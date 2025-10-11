@@ -135,10 +135,10 @@ type Module interface {
 }
 ```
 
-Modules are registered in the registry and accessed via `require()`. Current placeholder modules:
-- **fs**: File system operations (readFile, writeFile, readdir)
-- **http**: HTTP client/server functionality
-- **path**: Path manipulation utilities
+Modules are registered in the registry and accessed via `require()`. Current modules:
+- **path**: Path manipulation utilities (require-able)
+- **file**: File system operations (global API)
+- **http**: HTTP client/server functionality (global API)
 
 ### Event Loop Design
 
@@ -186,10 +186,18 @@ All Phase 1 objectives have been successfully implemented:
 - ✅ Unique global `file` API (no require needed)
 - ✅ Event loop integration for async file operations
 
-### Currently Starting: Phase 3 (Networking & HTTP)
-- HTTP client implementation
-- HTTP server capabilities
-- Request/response handling
+### Phase 3 (Networking & HTTP) - COMPLETE ✅
+- ✅ HTTP client implementation (GET, POST with callbacks)
+- ✅ HTTP server capabilities (createServer, listen)
+- ✅ Request/response handling with headers and status codes
+- ✅ Multiple header values support
+- ✅ Unique global `http` API (no require needed)
+- ✅ Event loop integration for async HTTP operations
+
+### Currently Starting: Phase 4 (WebSockets & Real-time)
+- WebSocket client and server
+- Real-time bidirectional communication
+- Connection management
 
 ## Key Implementation Files
 
@@ -251,3 +259,4 @@ See `docs/transpilation_strategy.md` for complete strategy details.
 3. **Async Pattern**: Currently using callbacks; Promises/async-await planned for Phase 5.
 4. **WebSocket Focus**: Core design goal is supporting real-time WebSocket applications.
 5. **Plugin System**: Custom plugin architecture planned for framework extensibility.
+6. **Global-First Design**: Core APIs (file, http) are available globally without require() - a unique Dougless feature.

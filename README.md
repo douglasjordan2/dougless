@@ -23,9 +23,9 @@ For more information on how esbuild integrates with Go, visit [esbuild Go API](h
 
 ## Current Status
 
-**Phase 1 (Foundation) and Phase 2 (File System & Modules) are COMPLETE! ✅**
+**Phase 1 (Foundation), Phase 2 (File System & Modules), and Phase 3 (Networking & HTTP) are COMPLETE! ✅**
 
-All features are fully implemented, tested, and validated with 25/25 tests passing.
+All features are fully implemented, tested, and validated.
 
 Currently implemented:
 
@@ -74,6 +74,16 @@ Currently implemented:
 - ✅ `file.stat()` - Get file/directory information
 - ✅ Global access (no `require()` needed!)
 
+### HTTP Module ✅ (Unique Global API)
+- ✅ `http.get()` - Make HTTP GET requests with callbacks
+- ✅ `http.post()` - Make HTTP POST requests with JSON payload
+- ✅ `http.createServer()` - Create HTTP server
+- ✅ Server request/response handling
+- ✅ Custom header support (`setHeader()`)
+- ✅ Response status codes and body content
+- ✅ Multiple header values support
+- ✅ Global access (no `require()` needed!)
+
 ### Testing & Quality ✅
 - ✅ **25/25 tests passing** (unit + integration)
 - ✅ **~75% code coverage** across all packages
@@ -81,10 +91,10 @@ Currently implemented:
 - ✅ **Race condition testing** (thread-safe event loop)
 - ✅ Full test coverage for file system and path modules
 
-### Next Up (Phase 3)
-- ⏳ HTTP client and server
-- ⏳ WebSocket support
-- ⏳ Network utilities
+### Next Up (Phase 4)
+- ⏳ WebSocket client and server
+- ⏳ Real-time bidirectional communication
+- ⏳ Connection management and broadcasting
 
 ## Quick Start
 
@@ -137,10 +147,34 @@ file.write('output.txt', 'Hello Dougless!', function(err) {
 - `file.write()` instead of `fs.writeFile()`
 - Clean, intuitive API design
 
+### Global HTTP Access
+Unlike Node.js which requires `const http = require('http')`, Dougless provides the `http` object globally:
+
+```javascript
+// Create an HTTP server - no require needed!
+const server = http.createServer((req, res) => {
+  res.setHeader('Content-Type', 'application/json')
+  res.statusCode = 200
+  res.end(JSON.stringify({ message: 'Hello from Dougless!' }))
+})
+
+server.listen(3000, () => {
+  console.log('Server running on port 3000')
+})
+
+// Make HTTP requests - also global!
+http.get('http://api.example.com/data', (err, response) => {
+  if (!err) {
+    console.log('Response:', response.body)
+  }
+})
+```
+
 ### Always Available Globals
 ```javascript
 console.log('Logging');          // ✅ Built-in
 file.read('file.txt', callback); // ✅ Built-in
+http.get('http://...', callback);// ✅ Built-in
 setTimeout(callback, 1000);      // ✅ Built-in
 
 var path = require('path');      // Module system still available
