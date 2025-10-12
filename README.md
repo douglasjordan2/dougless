@@ -17,6 +17,7 @@ Dougless Runtime is a custom runtime designed with the end goal of serving a cus
 
 ### Planned
 - 🔌 **WebSocket** implementation for real-time applications
+- 📦 **Package manager** - npm/bun-style dependency management (`dougless install`)
 - 🔒 **Crypto utilities** and security features
 - 🛠️ **Process management** and system integration
 - 🎯 **ES6+ support** through transpilation (future phases)
@@ -95,6 +96,15 @@ Currently implemented:
 - ⏳ WebSocket client and server
 - ⏳ Real-time bidirectional communication
 - ⏳ Connection management and broadcasting
+
+### Future Features
+- 📦 **Package Manager** (Post Phase 4)
+  - Dependency resolution and installation (`dougless install <package>`)
+  - Package manifest (`dougless.json`) with version management
+  - Lock file for reproducible builds (`dougless-lock.json`)
+  - Support for npm registry compatibility
+  - Local module cache and `dougless_modules/` directory
+  - Enhanced `require()` to support external packages
 
 ## Quick Start
 

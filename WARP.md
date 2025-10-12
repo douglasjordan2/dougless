@@ -225,14 +225,25 @@ All Phase 1 objectives have been successfully implemented:
 ## Future Development Phases
 
 The project follows an 8-phase development plan:
-1. Foundation (current)
-2. File System & Modules
-3. Networking & HTTP
-4. WebSockets & Real-time
+1. Foundation ✅
+2. File System & Modules ✅
+3. Networking & HTTP ✅
+4. WebSockets & Real-time (Current)
 5. Advanced Async & Promises
 6. Crypto & Security
 7. Process & System Integration
 8. Performance & Optimization
+
+### Post Phase 4: Package Manager
+After completing the core runtime phases, a package management system is planned:
+- **Package Installation**: `dougless install <package>` - npm-style package installation
+- **Dependency Management**: `dougless.json` manifest with `dougless-lock.json` for reproducibility
+- **Registry Integration**: Compatible with npm registry for package downloads
+- **Module Resolution**: Enhanced `require()` to support `dougless_modules/` directory
+- **Semver Support**: Version range resolution (`^`, `~`, `>=`, etc.)
+- **Dependency Tree**: Recursive dependency resolution with conflict handling
+- **Local Cache**: Global package cache at `~/.dougless/cache/`
+- **CLI Commands**: install, uninstall, update, list
 
 See `docs/project_plan.md` for detailed phase descriptions and milestones.
 
