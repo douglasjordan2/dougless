@@ -183,3 +183,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - WebSocket server
   - Real-time bidirectional communication
   - Connection management and broadcasting
+
+## Future Phases
+
+### Package Manager (Post Phase 4)
+- **Package Management System** (npm/bun-style)
+  - `dougless install <package>` - Install packages from npm registry
+  - `dougless install` - Install dependencies from `dougless.json`
+  - `dougless uninstall <package>` - Remove packages
+  - `dougless update` - Update package versions
+  - Package manifest (`dougless.json`) for dependency tracking
+  - Lock file (`dougless-lock.json`) for reproducible builds
+  - Semantic versioning support (`^`, `~`, `>=`, etc.)
+  - Dependency resolution with conflict handling
+  - Local module cache (`~/.dougless/cache/`)
+  - `dougless_modules/` directory structure
+  - Enhanced `require()` for external package resolution
+  - Integration with npm registry API
