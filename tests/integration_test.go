@@ -24,8 +24,8 @@ func TestCompleteJavaScriptProgram(t *testing.T) {
 		console.time('total-execution');
 		
 		// 1. Variables and Functions
-		var counter = 0;
-		var results = [];
+		let counter = 0;
+		const results = [];
 		
 		function fibonacci(n) {
 			if (n <= 1) return n;
@@ -34,13 +34,13 @@ func TestCompleteJavaScriptProgram(t *testing.T) {
 		
 		// 2. Computation
 		console.time('fibonacci');
-		var fib10 = fibonacci(10);
+		const fib10 = fibonacci(10);
 		console.timeEnd('fibonacci');
 		console.log('Fibonacci(10) =', fib10);
 		
 		// 3. Array Operations
-		var numbers = [1, 2, 3, 4, 5];
-		for (var i = 0; i < numbers.length; i++) {
+		const numbers = [1, 2, 3, 4, 5];
+		for (let i = 0; i < numbers.length; i++) {
 			results.push(numbers[i] * 2);
 		}
 		console.table(results);
@@ -65,7 +65,7 @@ func TestCompleteJavaScriptProgram(t *testing.T) {
 		}
 		
 		// Module system (require)
-		var path = require('path');
+		const path = require('path');
 		if (typeof path === 'object') {
 			console.log('✓ path module loaded via require');
 		}
@@ -127,8 +127,8 @@ func TestTimerAccuracy(t *testing.T) {
 	rt := runtime.New()
 	
 	script := `
-		var startTime = Date.now();
-		var measurements = [];
+		const startTime = Date.now();
+		const measurements = [];
 		
 		setTimeout(function() {
 			measurements.push(Date.now() - startTime);
@@ -166,11 +166,11 @@ func TestConcurrentTimers(t *testing.T) {
 	rt := runtime.New()
 	
 	script := `
-		var completedTimers = 0;
-		var timerResults = [];
+		let completedTimers = 0;
+		const timerResults = [];
 		
 		// Schedule 10 concurrent timers
-		for (var i = 0; i < 10; i++) {
+		for (let i = 0; i < 10; i++) {
 			(function(index) {
 				setTimeout(function() {
 					completedTimers++;
@@ -194,7 +194,7 @@ func TestConcurrentTimers(t *testing.T) {
 func TestErrorHandling(t *testing.T) {
 	t.Run("syntax error", func(t *testing.T) {
 		rt := runtime.New()
-		script := `var x = ; // Syntax error`
+		script := `const x = ; // Syntax error`
 		
 		err := rt.Execute(script, "syntax_error.js")
 		if err == nil {
@@ -243,7 +243,7 @@ func TestConsoleOperationsIntegration(t *testing.T) {
 		console.error('This is an error');
 		
 		console.time('operation1');
-		for (var i = 0; i < 1000; i++) {
+		for (let i = 0; i < 1000; i++) {
 			// Simulate work
 		}
 		console.timeEnd('operation1');
@@ -323,7 +323,7 @@ func TestModuleSystemIntegration(t *testing.T) {
 		}
 		
 		// Test require() module system
-		var path = require('path');
+		const path = require('path');
 		
 		if (typeof path !== 'object') {
 			console.error('path module not loaded');
@@ -351,16 +351,16 @@ func BenchmarkFullProgram(b *testing.B) {
 			return fibonacci(n - 1) + fibonacci(n - 2);
 		}
 		
-		var result = fibonacci(15);
+		const result = fibonacci(15);
 		
-		var data = [];
-		for (var i = 0; i < 10; i++) {
+		const data = [];
+		for (let i = 0; i < 10; i++) {
 			data.push(i * 2);
 		}
 		
 		setTimeout(function() {
-			var sum = 0;
-			for (var i = 0; i < data.length; i++) {
+			let sum = 0;
+			for (let i = 0; i < data.length; i++) {
 				sum += data[i];
 			}
 		}, 5);

@@ -79,7 +79,7 @@ Executes a comprehensive JavaScript program that tests:
 #### Error Handling Tests
 
 Tests JavaScript error scenarios:
-- Syntax errors (`var x = ;`)
+- Syntax errors (`const x = ;`)
 - Runtime errors (`throw new Error()`)
 - Undefined variable access
 
@@ -197,7 +197,7 @@ func TestSomething(t *testing.T) {
     rt := runtime.New()
     
     // Act: Perform the operation
-    err := rt.Execute("var x = 42;", "test.js")
+    err := rt.Execute("const x = 42;", "test.js")
     
     // Assert: Verify the result
     if err != nil {
@@ -244,8 +244,8 @@ tests := []struct {
     input  string
     want   string
 }{
-    {"simple", "var x = 1;", "1"},
-    {"complex", "var x = 2 * 2;", "4"},
+    {"simple", "const x = 1;", "1"},
+    {"complex", "const x = 2 * 2;", "4"},
 }
 
 for _, tt := range tests {

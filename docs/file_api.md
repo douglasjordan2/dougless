@@ -224,7 +224,7 @@ file.read('input.txt', function(err, data) {
     }
     
     // Process the data
-    var processed = data.toUpperCase();
+    const processed = data.toUpperCase();
     
     // Write to output
     file.write('output.txt', processed, function(err) {
@@ -275,7 +275,7 @@ file.readdir('temp', function(err, files) {
     }
     
     // Delete each file
-    var remaining = files.length;
+    let remaining = files.length;
     files.forEach(function(filename) {
         file.unlink('temp/' + filename, function(err) {
             if (err) console.error('Error deleting', filename, err);
@@ -308,7 +308,7 @@ file.exists('config.json', function(exists) {
         });
     } else {
         console.log('Creating new config...');
-        var defaultConfig = '{"version": "1.0"}';
+        const defaultConfig = '{"version": "1.0"}';
         file.write('config.json', defaultConfig, function(err) {
             if (!err) console.log('Config created');
         });

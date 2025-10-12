@@ -40,13 +40,13 @@ Hello, World!
 The REPL maintains state between evaluations:
 
 ```javascript
-> var x = 10
+> let x = 10
 undefined
 
 > x * 5
 50
 
-> var name = "Dougless"
+> const name = "Dougless"
 undefined
 
 > "Hello, " + name
@@ -84,7 +84,7 @@ undefined
 > console.time("test")
 undefined
 
-> for (var i = 0; i < 1000000; i++) {}
+> for (let i = 0; i < 1000000; i++) {}
 undefined
 
 > console.timeEnd("test")
@@ -137,10 +137,10 @@ This uses ANSI escape codes to clear the screen and reset the cursor.
 
 ## Tips & Tricks
 
-### 1. Use `var` for persistent variables
-Variables declared with `var` persist across REPL evaluations:
+### 1. Use `let` or `const` for persistent variables
+Variables declared with `let` or `const` persist across REPL evaluations:
 ```javascript
-> var config = { port: 3000 }
+> const config = { port: 3000 }
 > config.port
 3000
 ```
@@ -148,7 +148,7 @@ Variables declared with `var` persist across REPL evaluations:
 ### 2. Inspect objects
 Just type the variable name to see its value:
 ```javascript
-> var obj = { a: 1, b: 2, c: 3 }
+> const obj = { a: 1, b: 2, c: 3 }
 > obj
 [object Object]
 ```
@@ -167,7 +167,7 @@ Define functions and test them immediately:
 
 ### 4. Use console.table for data
 ```javascript
-> var data = [
+> const data = [
 ...   { name: "Alice", age: 30 },
 ...   { name: "Bob", age: 25 }
 ... ]
@@ -184,8 +184,8 @@ Define functions and test them immediately:
 ### 5. Experiment with timers
 Test async behavior:
 ```javascript
-> var count = 0
-> var interval = setInterval(function() {
+> let count = 0
+> const interval = setInterval(function() {
 ...   count++;
 ...   console.log("Count:", count);
 ...   if (count === 3) clearInterval(interval);
@@ -212,13 +212,12 @@ Errors don't crash the REPL - it continues running normally.
 The REPL uses the Goja JavaScript engine which supports ES5.1:
 
 **Supported:**
-- `var` declarations
+- `let` and `const` declarations
 - `function` keyword
 - Traditional `for` loops
 - Object and array literals
 
 **Not Supported (yet):**
-- `let` and `const`
 - Arrow functions (`=>`)
 - Template literals
 - `async`/`await`
@@ -255,15 +254,15 @@ If you're familiar with Node.js, the Dougless REPL is similar but simpler:
 
 ### Example 1: Quick Math
 ```javascript
-> var radius = 5
-> var area = Math.PI * radius * radius
+> const radius = 5
+> const area = Math.PI * radius * radius
 > console.log("Area:", area)
 Area: 78.53981633974483
 ```
 
 ### Example 2: String Manipulation
 ```javascript
-> var message = "hello world"
+> const message = "hello world"
 > message.toUpperCase()
 HELLO WORLD
 > message.split(" ")

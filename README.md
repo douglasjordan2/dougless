@@ -177,7 +177,7 @@ file.read('file.txt', callback); // ✅ Built-in
 http.get('http://...', callback);// ✅ Built-in
 setTimeout(callback, 1000);      // ✅ Built-in
 
-var path = require('path');      // Module system still available
+const path = require('path');    // Module system still available
 ```
 
 ## Project Structure
@@ -203,6 +203,7 @@ dougless-runtime/
 - **[Project Plan](docs/project_plan.md)** - Comprehensive development roadmap with 8 phases, technical architecture details, and success metrics
 - **[REPL Guide](docs/repl_guide.md)** - Complete guide to using the interactive REPL shell
 - **[File API Guide](docs/file_api.md)** - Complete reference for the global `file` API with examples
+- **[HTTP API Guide](docs/http_api.md)** - Complete reference for the global `http` API with examples
 - **[HTTP Design](docs/http_design.md)** - HTTP module design and implementation details
 - **[Changelog](CHANGELOG.md)** - Detailed history of changes, features, and improvements
 
