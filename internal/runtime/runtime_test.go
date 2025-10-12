@@ -176,7 +176,7 @@ func TestConsoleTime(t *testing.T) {
 		script := `
 			console.time('test');
 			// Simulate some work
-			for (var i = 0; i < 1000; i++) {}
+			for (let i = 0; i < 1000; i++) {}
 			console.timeEnd('test');
 		`
 		
@@ -323,7 +323,7 @@ func TestSetTimeout(t *testing.T) {
 		var mu sync.Mutex
 		
 		script := `
-			var executed = false;
+			let executed = false;
 			setTimeout(function() {
 				executed = true;
 			}, 50);
@@ -354,7 +354,7 @@ func TestSetTimeout(t *testing.T) {
 		startTime := time.Now()
 		
 		script := `
-			var done = false;
+			let done = false;
 			setTimeout(function() {
 				done = true;
 			}, 100);
@@ -384,8 +384,8 @@ func TestSetInterval(t *testing.T) {
 	rt := New()
 	
 	script := `
-		var count = 0;
-		var intervalId = setInterval(function() {
+		let count = 0;
+		const intervalId = setInterval(function() {
 			count++;
 			if (count >= 3) {
 				clearInterval(intervalId);
@@ -415,8 +415,8 @@ func TestClearTimeout(t *testing.T) {
 	rt := New()
 	
 	script := `
-		var executed = false;
-		var timeoutId = setTimeout(function() {
+		let executed = false;
+		const timeoutId = setTimeout(function() {
 			executed = true;
 		}, 100);
 		clearTimeout(timeoutId);
@@ -447,7 +447,7 @@ func TestModuleRequire(t *testing.T) {
 	t.Run("global file API available", func(t *testing.T) {
 		script := `
 			// File system is globally available (not via require)
-			var fileAvailable = typeof file === 'object';
+			const fileAvailable = typeof file === 'object';
 		`
 		
 		err := rt.Execute(script, "test.js")
@@ -468,9 +468,9 @@ func TestModuleRequire(t *testing.T) {
 	
 	t.Run("file API has expected methods", func(t *testing.T) {
 		script := `
-			var hasRead = typeof file.read === 'function';
-			var hasWrite = typeof file.write === 'function';
-			var hasExists = typeof file.exists === 'function';
+			const hasRead = typeof file.read === 'function';
+			const hasWrite = typeof file.write === 'function';
+			const hasExists = typeof file.exists === 'function';
 		`
 		
 		err := rt.Execute(script, "test.js")
@@ -496,7 +496,7 @@ func TestModuleRequire(t *testing.T) {
 	
 	t.Run("require path module", func(t *testing.T) {
 		script := `
-			var path = require('path');
+			const path = require('path');
 		`
 		
 		err := rt.Execute(script, "test.js")
@@ -521,20 +521,20 @@ func TestComplexScript(t *testing.T) {
 	
 	script := `
 		// Test variables and functions
-		var x = 10;
-		var y = 20;
+		const x = 10;
+		const y = 20;
 		
 		function add(a, b) {
 			return a + b;
 		}
 		
-		var result = add(x, y);
+		const result = add(x, y);
 		
 		// Test console
 		console.log('Result:', result);
 		
 		// Test timeout
-		var asyncDone = false;
+		let asyncDone = false;
 		setTimeout(function() {
 			asyncDone = true;
 			console.log('Async completed');
@@ -569,7 +569,7 @@ func TestComplexScript(t *testing.T) {
 
 // BenchmarkExecuteSimpleScript measures execution performance
 func BenchmarkExecuteSimpleScript(b *testing.B) {
-	script := "var x = 42; var y = x * 2;"
+	script := "const x = 42; const y = x * 2;"
 	
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

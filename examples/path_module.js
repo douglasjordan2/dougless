@@ -1,6 +1,11 @@
+// ===================================
+// Dougless Runtime - Path Module
+// ===================================
+// Demonstrates the path module (CommonJS require)
+
 const path = require('path');
 
-console.log('=== Testing Path Module ===\n');
+console.log('=== Path Module Demo ===\n');
 
 // Test 1: path.join()
 console.log('1. path.join():');
