@@ -1,25 +1,29 @@
 package repl
 
 import (
-  "bufio"
   "fmt"
   "io"
   "strings"
 
   "github.com/dop251/goja"
+  "github.com/peterh/liner"
+
   "github.com/douglasjordan2/dougless/internal/runtime"
 )
 
 type REPL struct {
   runtime *runtime.Runtime
-  reader  *bufio.Reader
+  line *liner.State
   writer  io.Writer
 }
 
 func New(rt *runtime.Runtime, reader io.Reader, writer io.Writer) *REPL {
+  line := liner.NewLiner()
+  line.SetCtrlCAborts(true)
+
   return &REPL{
     runtime: rt,
-    reader:  bufio.NewReader(reader),
+    line:    line,
     writer:  writer,
   }
 }
@@ -46,7 +50,7 @@ func (r *REPL) printWelcome() {
 func (r *REPL) handleCommand(cmd string) bool {
   switch cmd {
     case ".exit", ".quit":
-      fmt.Fprintln(r.writer, "See ya")
+      fmt.Fprintln(r.writer, "see ya")
       return true
     case ".help":
       r.printHelp()
@@ -70,6 +74,8 @@ func (r *REPL) printHelp() {
 }
 
 func (r *REPL) Run() error {
+  defer r.line.Close()
+
   r.printWelcome()
 
   var multilineBuffer strings.Builder
@@ -80,18 +86,22 @@ func (r *REPL) Run() error {
     if inMultiline {
       prompt = "... "
     }
-    fmt.Fprint(r.writer, prompt)
 
-    line, err := r.reader.ReadString('\n')
+    line, err := r.line.Prompt(prompt)
     if err != nil {
+      if err == liner.ErrPromptAborted {
+        fmt.Fprintln(r.writer, "\nsee ya")
+        return nil
+      }
+
       if err == io.EOF {
-        fmt.Fprintln(r.writer, "\nSee ya")
+        fmt.Fprintln(r.writer, "\nsee ya")
         return nil
       }
       return err
     }
 
-    line = strings.TrimRight(line, "\n\r")
+    line = strings.TrimSpace(line)
 
     if !inMultiline && strings.HasPrefix(line, ".") {
       if r.handleCommand(line) {
@@ -115,6 +125,10 @@ func (r *REPL) Run() error {
       continue
     }
 
+    if !inMultiline && line != "" {
+      r.line.AppendHistory(line)
+    }
+
     result, err := r.runtime.Evaluate(currentInput)
     if err != nil {
       if jsErr, ok := err.(*goja.Exception); ok {
@@ -127,5 +141,6 @@ func (r *REPL) Run() error {
     }
 
     multilineBuffer.Reset()
+    inMultiline = false
   }
 }
