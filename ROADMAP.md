@@ -152,7 +152,6 @@ While the core permissions system is complete, these enhancements will improve u
 - ⏳ `dougless init` command to generate config template
 
 ### Advanced Features
-- ⏳ Configurable prompt timeout (`--prompt-timeout=60s`)
 - ⏳ Persistent permission cache across runs
 - ⏳ Permission audit logging (track what was accessed)
 - ⏳ Color-coded terminal output for prompts
