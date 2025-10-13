@@ -36,6 +36,17 @@ func NewLoop() *Loop {
 	}
 }
 
+// NewLoopWithContext creates a new event loop with a custom context
+func NewLoopWithContext(ctx context.Context) *Loop {
+	loopCtx, cancel := context.WithCancel(ctx)
+	return &Loop{
+		tasks:  make(chan *Task, 100),
+		timers: make(map[string]*time.Timer),
+		ctx:    loopCtx,
+		cancel: cancel,
+	}
+}
+
 // Run starts the event loop
 func (l *Loop) Run() {
 	l.mu.Lock()
