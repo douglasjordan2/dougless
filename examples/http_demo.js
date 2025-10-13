@@ -225,9 +225,4 @@ server.listen(3000, function() {
         console.log('You can test it with: curl http://localhost:3000');
         console.log('\nPress Ctrl+C to stop the server');
     }, 4500);
-    
-    // Keep the server running
-    setInterval(function() {
-        // Heartbeat to keep event loop alive
-    }, 10000);
 });

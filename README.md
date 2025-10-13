@@ -15,8 +15,10 @@ Dougless Runtime is a custom runtime designed with the end goal of serving a cus
 - ⚡ **Event loop** with proper async operation handling
 - 📦 **CommonJS module system** for additional modules
 
+### Recently Completed
+- ✅ **WebSocket** implementation for real-time applications (Phase 4)
+
 ### Planned
-- 🔌 **WebSocket** implementation for real-time applications
 - 📦 **Package manager** - npm/bun-style dependency management (`dougless install`)
 - 🔒 **Crypto utilities** and security features
 - 🛠️ **Process management** and system integration
@@ -24,9 +26,13 @@ Dougless Runtime is a custom runtime designed with the end goal of serving a cus
 
 ## Current Status
 
-**Phase 1 (Foundation), Phase 2 (File System & Modules), and Phase 3 (Networking & HTTP) are COMPLETE! ✅**
+**Phases 1-4 COMPLETE! ✅**
+- Phase 1: Foundation ✅
+- Phase 2: File System & Modules ✅  
+- Phase 3: Networking & HTTP ✅
+- Phase 4: WebSockets & Real-time ✅
 
-All features are fully implemented, tested, and validated.
+All core features are fully implemented, tested, and validated.
 
 Currently implemented:
 
@@ -85,17 +91,28 @@ Currently implemented:
 - ✅ Multiple header values support
 - ✅ Global access (no `require()` needed!)
 
+### WebSocket Module ✅ (Phase 4 Complete!)
+- ✅ `server.websocket(path, callbacks)` - Add WebSocket endpoint to server
+- ✅ Real-time bidirectional communication
+- ✅ Connection state management (`readyState` property)
+- ✅ Browser-compatible API (CONNECTING, OPEN, CLOSING, CLOSED)
+- ✅ Thread-safe message sending with mutex protection
+- ✅ Broadcasting to multiple clients
+- ✅ Event callbacks: `open`, `message`, `close`, `error`
+- ✅ `ws.send()`, `ws.close()` methods on connection object
+
 ### Testing & Quality ✅
-- ✅ **25/25 tests passing** (unit + integration)
+- ✅ **Tests passing** (unit + integration)
 - ✅ **~75% code coverage** across all packages
 - ✅ **Benchmark suite** for performance tracking
 - ✅ **Race condition testing** (thread-safe event loop)
 - ✅ Full test coverage for file system and path modules
+- ✅ WebSocket examples and documentation
 
-### Next Up (Phase 4)
-- ⏳ WebSocket client and server
-- ⏳ Real-time bidirectional communication
-- ⏳ Connection management and broadcasting
+### Next Up (Phase 5)
+- ⏳ Promises and Promise-based APIs
+- ⏳ async/await syntax support
+- ⏳ Error handling improvements
 
 ### Future Features
 - 📦 **Package Manager** (Post Phase 4)
@@ -180,6 +197,35 @@ http.get('http://api.example.com/data', (err, response) => {
 })
 ```
 
+### WebSocket Support (Real-time Communication)
+Built-in WebSocket support for real-time applications:
+
+```javascript
+// Create server with WebSocket endpoint
+const server = http.createServer((req, res) => {
+  res.end('WebSocket server');
+});
+
+server.websocket('/chat', {
+  open: function(ws) {
+    console.log('Client connected');
+    console.log('State:', ws.readyState === ws.OPEN); // true
+    ws.send('Welcome!');
+  },
+  
+  message: function(msg) {
+    console.log('Received:', msg.data);
+    ws.send('Echo: ' + msg.data);
+  },
+  
+  close: function() {
+    console.log('Client disconnected');
+  }
+});
+
+server.listen(8080);  // Server stays running automatically!
+```
+
 ### Always Available Globals
 ```javascript
 console.log('Logging');          // ✅ Built-in
@@ -221,8 +267,8 @@ dougless-runtime/
 1. **Foundation** ✅ - Basic runtime with console operations and timers
 2. **File System & Modules** ✅ - File I/O and robust module system
 3. **Networking & HTTP** ✅ - HTTP client/server capabilities
-4. **WebSockets & Real-time** (Current) - WebSocket implementation
-5. **Advanced Async & Promises** - Promise support and async/await
+4. **WebSockets & Real-time** ✅ - WebSocket implementation with broadcasting
+5. **Advanced Async & Promises** (Current) - Promise support and async/await
 6. **Crypto & Security** - Cryptographic functions and security features
 7. **Process & System Integration** - System-level operations
 8. **Performance & Optimization** - Production-ready optimizations
@@ -233,8 +279,8 @@ dougless-runtime/
 - **[Goja](https://github.com/dop251/goja)** - Pure Go JavaScript engine (ES5.1)
 - **Go standard library** - For system operations, networking, and crypto
 
-### Planned Dependencies
-- **[gorilla/websocket](https://github.com/gorilla/websocket)** - WebSocket implementation (Phase 4)
+### Current Dependencies
+- **[gorilla/websocket](https://github.com/gorilla/websocket)** - WebSocket implementation ✅
 
 ## Inspiration & References
 

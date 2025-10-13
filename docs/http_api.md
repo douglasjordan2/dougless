@@ -158,7 +158,7 @@ server.listen(3000, function() {
 });
 ```
 
-**Note:** The server runs in a background goroutine. Keep the event loop alive with timers if needed.
+**Note:** The server automatically keeps the event loop alive - no need for workarounds like `setInterval()`. Just call `listen()` and your server will run until you stop it with Ctrl+C.
 
 ---
 
@@ -468,9 +468,134 @@ const server = http.createServer(function(req, res) {
 
 ---
 
+## WebSocket Support
+
+### `server.websocket(path, callbacks)`
+
+Add WebSocket support to your HTTP server.
+
+**Parameters:**
+- `path` (string) - WebSocket endpoint path (e.g., `/ws` or `/chat`)
+- `callbacks` (object) - Object with callback functions:
+  - `open(ws)` - Called when client connects, receives WebSocket connection object
+  - `message(msg)` - Called when message received, receives message object
+  - `close()` - Called when connection closes
+  - `error(err)` - Called on errors
+
+**WebSocket Connection Object (ws):**
+- `send(message)` - Send a text message to the client
+- `close()` - Close the connection
+- `readyState` - Current connection state (number, not a function!)
+  - `ws.CONNECTING` = 0
+  - `ws.OPEN` = 1
+  - `ws.CLOSING` = 2
+  - `ws.CLOSED` = 3
+
+**Message Object:**
+- `data` (string) - The message content
+- `type` (number) - Message type (1 = text, 2 = binary)
+
+**Example: Echo Server**
+```javascript
+const server = http.createServer(function(req, res) {
+    res.end('WebSocket server running');
+});
+
+server.websocket('/ws', {
+    open: function(ws) {
+        console.log('Client connected');
+        console.log('State:', ws.readyState);  // 1 (OPEN)
+        ws.send('Welcome to the server!');
+    },
+    
+    message: function(msg) {
+        console.log('Received:', msg.data);
+        // Echo back
+        ws.send('Echo: ' + msg.data);
+    },
+    
+    close: function() {
+        console.log('Client disconnected');
+    },
+    
+    error: function(err) {
+        console.error('WebSocket error:', err);
+    }
+});
+
+server.listen(8080);
+```
+
+**Example: Chat Room with Broadcasting**
+```javascript
+const clients = [];
+
+const server = http.createServer(function(req, res) {
+    res.end('Chat server');
+});
+
+server.websocket('/chat', {
+    open: function(ws) {
+        clients.push(ws);
+        console.log('User joined. Total:', clients.length);
+        
+        // Notify all clients
+        clients.forEach(function(client) {
+            if (client.readyState === client.OPEN) {
+                client.send('User joined (' + clients.length + ' online)');
+            }
+        });
+    },
+    
+    message: function(msg) {
+        const data = JSON.parse(msg.data);
+        console.log(data.username + ':', data.message);
+        
+        // Broadcast to all connected clients
+        const broadcast = JSON.stringify({
+            username: data.username,
+            message: data.message
+        });
+        
+        clients.forEach(function(client) {
+            if (client.readyState === client.OPEN) {
+                client.send(broadcast);
+            }
+        });
+    },
+    
+    close: function() {
+        // Remove disconnected client
+        for (let i = 0; i < clients.length; i++) {
+            if (clients[i].readyState !== clients[i].OPEN) {
+                clients.splice(i, 1);
+                break;
+            }
+        }
+        console.log('User left. Remaining:', clients.length);
+    }
+});
+
+server.listen(8080);
+```
+
+**Key Features:**
+- ✅ Browser-compatible WebSocket API
+- ✅ `readyState` property (matches browser standard)
+- ✅ Thread-safe message sending with mutex
+- ✅ Automatic state management (OPEN → CLOSING → CLOSED)
+- ✅ Multiple WebSocket endpoints on same server
+- ✅ Broadcasting to multiple clients
+
+**See Examples:**
+- `examples/websocket_server.js` - Simple echo server
+- `examples/websocket_chat.js` - Multi-user chat room
+
+---
+
 ## Limitations
 
-### Current Limitations (Phase 3)
+### Current Limitations (Phase 3-4)
 - GET and POST only (no PUT, DELETE, PATCH methods yet)
 - No custom request headers
 - No streaming (entire body loaded into memory)
