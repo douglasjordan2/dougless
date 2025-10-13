@@ -83,6 +83,13 @@ func (l *Loop) Wait() {
 	l.wg.Wait()
 }
 
+func (l *Loop) KeepAlive() func() {
+  l.wg.Add(1)
+  return func() {
+    l.wg.Done()
+  }
+}
+
 // ScheduleTask schedules a task to be executed
 func (l *Loop) ScheduleTask(task *Task) {
   l.wg.Add(1) // track pending task when it's scheduled to account for delayed tasks (ex: setTimeout)

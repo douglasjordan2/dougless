@@ -36,13 +36,13 @@ func (fs *FileSystem) Export(vm *goja.Runtime) goja.Value {
 
 func (fs *FileSystem) read(call goja.FunctionCall) goja.Value {
   if len(call.Arguments) < 2 {
-    panic(fs.vm.ToValue("read requires a file and a callback"))
+    panic(fs.vm.NewTypeError("read requires a file and a callback"))
   }
 
   filename := call.Arguments[0].String()
   callback, ok := goja.AssertFunction(call.Arguments[1])
   if !ok {
-    panic(fs.vm.ToValue("second argument must be a callback function"))
+    panic(fs.vm.NewTypeError("second argument must be a callback function"))
   }
 
   fs.eventLoop.ScheduleTask(&event.Task{
@@ -69,14 +69,14 @@ func (fs *FileSystem) read(call goja.FunctionCall) goja.Value {
 // write file async
 func (fs *FileSystem) write(call goja.FunctionCall) goja.Value {
   if len(call.Arguments) < 3 {
-    panic(fs.vm.ToValue("write requires filename, data, and callback"))
+    panic(fs.vm.NewTypeError("write requires filename, data, and callback"))
   }
 
   filename := call.Arguments[0].String()
   data := call.Arguments[1].String()
   callback, ok := goja.AssertFunction(call.Arguments[2])
   if !ok {
-    panic(fs.vm.ToValue("third argument must be a callback function"))
+    panic(fs.vm.NewTypeError("third argument must be a callback function"))
   }
 
   fs.eventLoop.ScheduleTask(&event.Task{
@@ -100,13 +100,13 @@ func (fs *FileSystem) write(call goja.FunctionCall) goja.Value {
 // read directory contents async
 func (fs *FileSystem) readdir(call goja.FunctionCall) goja.Value {
   if len(call.Arguments) < 2 {
-    panic(fs.vm.ToValue("readdir requires a path and a callback"))
+    panic(fs.vm.NewTypeError("readdir requires a path and a callback"))
   }
 
   dirPath := call.Arguments[0].String()
   callback, ok := goja.AssertFunction(call.Arguments[1])
   if !ok {
-    panic(fs.vm.ToValue("second argument must be a callback function"))
+    panic(fs.vm.NewTypeError("second argument must be a callback function"))
   }
 
   fs.eventLoop.ScheduleTask(&event.Task{
@@ -135,13 +135,13 @@ func (fs *FileSystem) readdir(call goja.FunctionCall) goja.Value {
 
 func (fs *FileSystem) exists(call goja.FunctionCall) goja.Value {
   if len(call.Arguments) < 2 {
-    panic(fs.vm.ToValue("exists requires a path and a callback"))
+    panic(fs.vm.NewTypeError("exists requires a path and a callback"))
   }
 
   path := call.Arguments[0].String()
   callback, ok := goja.AssertFunction(call.Arguments[1])
   if !ok {
-    panic(fs.vm.ToValue("second argument must be a callback"))
+    panic(fs.vm.NewTypeError("second argument must be a callback"))
   }
 
   fs.eventLoop.ScheduleTask(&event.Task{
@@ -158,13 +158,13 @@ func (fs *FileSystem) exists(call goja.FunctionCall) goja.Value {
 
 func (fs *FileSystem) mkdir(call goja.FunctionCall) goja.Value {
   if len(call.Arguments) < 2 {
-    panic(fs.vm.ToValue("mkdir requires a path and a callback"))
+    panic(fs.vm.NewTypeError("mkdir requires a path and a callback"))
   }
 
   path := call.Arguments[0].String()
   callback, ok := goja.AssertFunction(call.Arguments[1])
   if !ok {
-    panic(fs.vm.ToValue("second argument must bu a callback function"))
+    panic(fs.vm.NewTypeError("second argument must be a callback function"))
   }
 
   fs.eventLoop.ScheduleTask(&event.Task{
@@ -187,13 +187,13 @@ func (fs *FileSystem) mkdir(call goja.FunctionCall) goja.Value {
 
 func (fs *FileSystem) rmdir(call goja.FunctionCall) goja.Value {
   if len(call.Arguments) < 2 {
-    panic(fs.vm.ToValue("rmdir requires a path and a callback"))
+    panic(fs.vm.NewTypeError("rmdir requires a path and a callback"))
   }
 
   path := call.Arguments[0].String()
   callback, ok := goja.AssertFunction(call.Arguments[1])
   if !ok {
-    panic(fs.vm.ToValue("second argument must be a callback function"))
+    panic(fs.vm.NewTypeError("second argument must be a callback function"))
   }
 
   fs.eventLoop.ScheduleTask(&event.Task{
@@ -216,13 +216,13 @@ func (fs *FileSystem) rmdir(call goja.FunctionCall) goja.Value {
 
 func (fs *FileSystem) unlink(call goja.FunctionCall) goja.Value {
   if len(call.Arguments) < 2 {
-    panic(fs.vm.ToValue("unlink requires a path and a callback"))
+    panic(fs.vm.NewTypeError("unlink requires a path and a callback"))
   }
 
   path := call.Arguments[0].String()
   callback, ok := goja.AssertFunction(call.Arguments[1])
   if !ok {
-    panic(fs.vm.ToValue("second argument must be a callback function"))
+    panic(fs.vm.NewTypeError("second argument must be a callback function"))
   }
 
   fs.eventLoop.ScheduleTask(&event.Task{
@@ -245,13 +245,13 @@ func (fs *FileSystem) unlink(call goja.FunctionCall) goja.Value {
 
 func (fs *FileSystem) stat(call goja.FunctionCall) goja.Value {
   if len(call.Arguments) < 2 {
-    panic(fs.vm.ToValue("stat requires a path and a callback"))
+    panic(fs.vm.NewTypeError("stat requires a path and a callback"))
   }
 
   path := call.Arguments[0].String()
   callback, ok := goja.AssertFunction(call.Arguments[1])
   if !ok {
-    panic(fs.vm.ToValue("second argument must be a callback function"))
+    panic(fs.vm.NewTypeError("second argument must be a callback function"))
   }
 
   fs.eventLoop.ScheduleTask(&event.Task{
