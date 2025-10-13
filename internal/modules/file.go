@@ -1,10 +1,14 @@
 package modules
 
 import (
+  "context"
   "os"
+  "time"
 
   "github.com/dop251/goja"
+
   "github.com/douglasjordan2/dougless/internal/event"
+  "github.com/douglasjordan2/dougless/internal/permissions"
 )
 
 type FileSystem struct {
@@ -47,6 +51,17 @@ func (fs *FileSystem) read(call goja.FunctionCall) goja.Value {
 
   fs.eventLoop.ScheduleTask(&event.Task{
     Callback: func() {
+      ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+      defer cancel()
+
+      mgr := permissions.GetManager()
+      canRead := permissions.PermissionRead
+      if !mgr.CheckWithPrompt(ctx, canRead, filename) {
+        errMsg := mgr.ErrorMessage(canRead, filename)
+        callback(goja.Undefined(), fs.vm.ToValue(errMsg), goja.Undefined())
+        return
+      }
+
       // goroutine reads the file
       data, err := os.ReadFile(filename)
 
@@ -81,6 +96,17 @@ func (fs *FileSystem) write(call goja.FunctionCall) goja.Value {
 
   fs.eventLoop.ScheduleTask(&event.Task{
     Callback: func() {
+      ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+      defer cancel()
+
+      mgr := permissions.GetManager()
+      canWrite := permissions.PermissionWrite
+      if !mgr.CheckWithPrompt(ctx, canWrite, filename) {
+        errMsg := mgr.ErrorMessage(canWrite, filename)
+        callback(goja.Undefined(), fs.vm.ToValue(errMsg))
+        return
+      }
+
       err := os.WriteFile(filename, []byte(data), 0644)
 
       var errArg goja.Value
@@ -111,6 +137,17 @@ func (fs *FileSystem) readdir(call goja.FunctionCall) goja.Value {
 
   fs.eventLoop.ScheduleTask(&event.Task{
     Callback: func() {
+      ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+      defer cancel()
+
+      mgr := permissions.GetManager()
+      canRead := permissions.PermissionRead
+      if !mgr.CheckWithPrompt(ctx, canRead, dirPath) {
+        errMsg := mgr.ErrorMessage(canRead, dirPath)
+        callback(goja.Undefined(), fs.vm.ToValue(errMsg), goja.Undefined())
+        return
+      }
+
       entries, err := os.ReadDir(dirPath)
 
       var errArg, dataArg goja.Value
@@ -146,6 +183,16 @@ func (fs *FileSystem) exists(call goja.FunctionCall) goja.Value {
 
   fs.eventLoop.ScheduleTask(&event.Task{
     Callback: func() {
+      ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+      defer cancel()
+
+      mgr := permissions.GetManager()
+      canRead := permissions.PermissionRead
+      if !mgr.CheckWithPrompt(ctx, canRead, path) {
+        callback(goja.Undefined(), fs.vm.ToValue(false))
+        return
+      }
+
       _, err := os.Stat(path)
       exists := err == nil
 
@@ -169,6 +216,17 @@ func (fs *FileSystem) mkdir(call goja.FunctionCall) goja.Value {
 
   fs.eventLoop.ScheduleTask(&event.Task{
     Callback: func() {
+      ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+      defer cancel()
+
+      mgr := permissions.GetManager()
+      canWrite := permissions.PermissionWrite
+      if !mgr.CheckWithPrompt(ctx, canWrite, path) {
+        errMsg := mgr.ErrorMessage(canWrite, path)
+        callback(goja.Undefined(), fs.vm.ToValue(errMsg))
+        return
+      }
+
       err := os.Mkdir(path, 0755)
 
       var errArg goja.Value
@@ -198,6 +256,17 @@ func (fs *FileSystem) rmdir(call goja.FunctionCall) goja.Value {
 
   fs.eventLoop.ScheduleTask(&event.Task{
     Callback: func() {
+      ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+      defer cancel()
+
+      mgr := permissions.GetManager()
+      canWrite := permissions.PermissionWrite
+      if !mgr.CheckWithPrompt(ctx, canWrite, path) {
+        errMsg := mgr.ErrorMessage(canWrite, path)
+        callback(goja.Undefined(), fs.vm.ToValue(errMsg))
+        return
+      }
+
       err := os.Remove(path)
 
       var errArg goja.Value
@@ -227,6 +296,17 @@ func (fs *FileSystem) unlink(call goja.FunctionCall) goja.Value {
 
   fs.eventLoop.ScheduleTask(&event.Task{
     Callback: func() {
+      ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+      defer cancel()
+
+      mgr := permissions.GetManager()
+      canWrite := permissions.PermissionWrite
+      if !mgr.CheckWithPrompt(ctx, canWrite, path) {
+        errMsg := mgr.ErrorMessage(canWrite, path)
+        callback(goja.Undefined(), fs.vm.ToValue(errMsg))
+        return
+      }
+
       err := os.Remove(path)
 
       var errArg goja.Value
@@ -256,6 +336,17 @@ func (fs *FileSystem) stat(call goja.FunctionCall) goja.Value {
 
   fs.eventLoop.ScheduleTask(&event.Task{
     Callback: func() {
+      ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+      defer cancel()
+
+      mgr := permissions.GetManager()
+      canRead := permissions.PermissionRead
+      if !mgr.CheckWithPrompt(ctx, canRead, path) {
+        errMsg := mgr.ErrorMessage(canRead, path)
+        callback(goja.Undefined(), fs.vm.ToValue(errMsg), goja.Undefined())
+        return
+      }
+
       info, err := os.Stat(path)
 
       var errArg, dataArg goja.Value

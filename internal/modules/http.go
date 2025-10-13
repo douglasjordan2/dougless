@@ -2,481 +2,594 @@ package modules
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
-  "fmt"
+	"fmt"
 	"io"
+	"net"
 	netHttp "net/http"
-  "os"
-  "strings"
-  "sync"
+	"os"
+	"strings"
+	"sync"
+	"time"
 
 	"github.com/dop251/goja"
-  "github.com/gorilla/websocket"
+	"github.com/gorilla/websocket"
 
 	"github.com/douglasjordan2/dougless/internal/event"
+	"github.com/douglasjordan2/dougless/internal/permissions"
 )
 
 type HTTP struct {
-  vm        *goja.Runtime
-  eventLoop *event.Loop
+	vm        *goja.Runtime
+	eventLoop *event.Loop
 }
 
 func NewHTTP(eventLoop *event.Loop) *HTTP {
-  return &HTTP{
-    eventLoop: eventLoop,
-  }
+	return &HTTP{
+		eventLoop: eventLoop,
+	}
 }
 
 func (http *HTTP) Export(vm *goja.Runtime) goja.Value {
-  http.vm = vm
-  obj := vm.NewObject()
+	http.vm = vm
+	obj := vm.NewObject()
 
-  obj.Set("get", http.get)
-  obj.Set("post", http.post)
-  obj.Set("createServer", http.createServer)
+	obj.Set("get", http.get)
+	obj.Set("post", http.post)
+	obj.Set("createServer", http.createServer)
 
-  return obj
+	return obj
+}
+
+func (http *HTTP) extractHost(urlStr string) string {
+	urlStr = strings.TrimPrefix(urlStr, "http://")
+	urlStr = strings.TrimPrefix(urlStr, "https://")
+
+	parts := strings.SplitN(urlStr, "/", 2)
+	return parts[0]
 }
 
 func (http *HTTP) get(call goja.FunctionCall) goja.Value {
-  if len(call.Arguments) < 2 {
-    panic(http.vm.ToValue("GET requires a URL and a callback"))
-  }
+	if len(call.Arguments) < 2 {
+		panic(http.vm.ToValue("GET requires a URL and a callback"))
+	}
 
-  url := call.Arguments[0].String()
-  callback, ok := goja.AssertFunction(call.Arguments[1])
-  if !ok {
-    panic(http.vm.ToValue("second argument must be a callback function"))
-  }
+	url := call.Arguments[0].String()
+	callback, ok := goja.AssertFunction(call.Arguments[1])
+	if !ok {
+		panic(http.vm.ToValue("second argument must be a callback function"))
+	}
 
-  http.eventLoop.ScheduleTask(&event.Task{
-    Callback: func() {
-      resp, err := netHttp.Get(url)
+	http.eventLoop.ScheduleTask(&event.Task{
+		Callback: func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
 
-      var errArg, dataArg goja.Value
-      if err != nil {
-        errArg = http.vm.ToValue(err.Error())
-        dataArg = goja.Undefined()
-      } else {
-        defer resp.Body.Close()
-        body, readErr := io.ReadAll(resp.Body)
+			host := http.extractHost(url)
+			mgr := permissions.GetManager()
+			canNet := permissions.PermissionNet
+			if !mgr.CheckWithPrompt(ctx, canNet, host) {
+				errMsg := mgr.ErrorMessage(canNet, host)
+				callback(goja.Undefined(), http.vm.ToValue(errMsg), goja.Undefined())
+				return
+			}
 
-        if readErr != nil {
-          errArg = http.vm.ToValue(readErr.Error())
-          dataArg = goja.Undefined()
-        } else {
-          responseObj := http.vm.NewObject()
-          responseObj.Set("status", resp.Status)
-          responseObj.Set("statusCode", resp.StatusCode)
-          responseObj.Set("body", string(body))
+			resp, err := netHttp.Get(url)
 
-          headersObj := http.vm.NewObject()
-          for key, values := range resp.Header {
-            if len(values) == 1 {
-              headersObj.Set(key, values[0])
-            } else if len(values) > 1 {
-              headersObj.Set(key, values)
-            }
-          }
-          responseObj.Set("headers", headersObj)
+			var errArg, dataArg goja.Value
+			if err != nil {
+				errArg = http.vm.ToValue(err.Error())
+				dataArg = goja.Undefined()
+			} else {
+				defer resp.Body.Close()
+				body, readErr := io.ReadAll(resp.Body)
 
-          errArg = goja.Null()
-          dataArg = responseObj
-        }
-      }
+				if readErr != nil {
+					errArg = http.vm.ToValue(readErr.Error())
+					dataArg = goja.Undefined()
+				} else {
+					responseObj := http.vm.NewObject()
+					responseObj.Set("status", resp.Status)
+					responseObj.Set("statusCode", resp.StatusCode)
+					responseObj.Set("body", string(body))
 
-      callback(goja.Undefined(), errArg, dataArg)
-    },
-  })
+					headersObj := http.vm.NewObject()
+					for key, values := range resp.Header {
+						if len(values) == 1 {
+							headersObj.Set(key, values[0])
+						} else if len(values) > 1 {
+							headersObj.Set(key, values)
+						}
+					}
+					responseObj.Set("headers", headersObj)
 
-  return goja.Undefined()
+					errArg = goja.Null()
+					dataArg = responseObj
+				}
+			}
+
+			callback(goja.Undefined(), errArg, dataArg)
+		},
+	})
+
+	return goja.Undefined()
 }
 
 func (http *HTTP) post(call goja.FunctionCall) goja.Value {
-  if len(call.Arguments) < 3 {
-    panic(http.vm.ToValue("POST requires a URL, payload, and a callback"))
-  }
+	if len(call.Arguments) < 3 {
+		panic(http.vm.ToValue("POST requires a URL, payload, and a callback"))
+	}
 
-  url := call.Arguments[0].String()
-  payload := call.Arguments[1].Export()
-  callback, ok := goja.AssertFunction(call.Arguments[2])
-  if !ok {
-    panic(http.vm.ToValue("last argument must be a callback function"))
-  }
+	url := call.Arguments[0].String()
+	payload := call.Arguments[1].Export()
+	callback, ok := goja.AssertFunction(call.Arguments[2])
+	if !ok {
+		panic(http.vm.ToValue("last argument must be a callback function"))
+	}
 
-  contentType := "application/json"
-  dataMap, isMap := payload.(map[string]any)
+	contentType := "application/json"
+	dataMap, isMap := payload.(map[string]any)
 
-  if isMap {
-    if ct, exists := dataMap["contentType"]; exists {
-      contentType = ct.(string)
-      delete(dataMap, "contentType")
-      payload = dataMap
-    }
-  }
+	if isMap {
+		if ct, exists := dataMap["contentType"]; exists {
+			contentType = ct.(string)
+			delete(dataMap, "contentType")
+			payload = dataMap
+		}
+	}
 
-  http.eventLoop.ScheduleTask(&event.Task{
-    Callback: func() {
-      jsonBytes, _ := json.Marshal(payload)
-      body := bytes.NewBuffer(jsonBytes)
+	http.eventLoop.ScheduleTask(&event.Task{
+		Callback: func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
 
-      resp, err := netHttp.Post(url, contentType, body)
+			host := http.extractHost(url)
+			mgr := permissions.GetManager()
+			canNet := permissions.PermissionNet
+			if !mgr.CheckWithPrompt(ctx, canNet, host) {
+				errMsg := mgr.ErrorMessage(canNet, host)
+				callback(goja.Undefined(), http.vm.ToValue(errMsg), goja.Undefined())
+				return
+			}
 
-      var errArg, dataArg goja.Value
-      if err != nil {
-        errArg = http.vm.ToValue(err.Error())
-        dataArg = goja.Undefined()
-      } else {
-        defer resp.Body.Close()
-        body, readErr := io.ReadAll(resp.Body)
+			jsonBytes, marshalErr := json.Marshal(payload)
+			if marshalErr != nil {
+				callback(goja.Undefined(), http.vm.ToValue(marshalErr.Error()), goja.Undefined())
+				return
+			}
+			body := bytes.NewBuffer(jsonBytes)
 
-        if readErr != nil {
-          errArg = http.vm.ToValue(readErr.Error())
-          dataArg = goja.Undefined()
-        } else {
-          responseObj := http.vm.NewObject()
-          responseObj.Set("status", resp.Status)
-          responseObj.Set("statusCode", resp.StatusCode)
-          responseObj.Set("body", string(body))
+			resp, err := netHttp.Post(url, contentType, body)
 
-          headersObj := http.vm.NewObject()
-          for key, values := range resp.Header {
-            if len(values) == 1 {
-              headersObj.Set(key, values[0])
-            } else if len(values) > 1 {
-              headersObj.Set(key, values)
-            }
-          }
-          responseObj.Set("headers", headersObj)
+			var errArg, dataArg goja.Value
+			if err != nil {
+				errArg = http.vm.ToValue(err.Error())
+				dataArg = goja.Undefined()
+			} else {
+				defer resp.Body.Close()
+				body, readErr := io.ReadAll(resp.Body)
 
-          errArg = goja.Null()
-          dataArg = responseObj
-        }
-      }
+				if readErr != nil {
+					errArg = http.vm.ToValue(readErr.Error())
+					dataArg = goja.Undefined()
+				} else {
+					responseObj := http.vm.NewObject()
+					responseObj.Set("status", resp.Status)
+					responseObj.Set("statusCode", resp.StatusCode)
+					responseObj.Set("body", string(body))
 
-      callback(goja.Undefined(), errArg, dataArg)
-    },
-  })
+					headersObj := http.vm.NewObject()
+					for key, values := range resp.Header {
+						if len(values) == 1 {
+							headersObj.Set(key, values[0])
+						} else if len(values) > 1 {
+							headersObj.Set(key, values)
+						}
+					}
+					responseObj.Set("headers", headersObj)
 
-  return goja.Undefined()
+					errArg = goja.Null()
+					dataArg = responseObj
+				}
+			}
+
+			callback(goja.Undefined(), errArg, dataArg)
+		},
+	})
+
+	return goja.Undefined()
 }
 
 func (http *HTTP) createRequestObject(r *netHttp.Request) goja.Value {
-  reqObj := http.vm.NewObject()
+	reqObj := http.vm.NewObject()
 
-  reqObj.Set("method", r.Method)
-  reqObj.Set("url", r.URL.String())
+	reqObj.Set("method", r.Method)
+	reqObj.Set("url", r.URL.String())
 
-  defer r.Body.Close()
-  body, readErr := io.ReadAll(r.Body)
+	defer r.Body.Close()
+	body, readErr := io.ReadAll(r.Body)
 
-  if readErr != nil {
-    reqObj.Set("body", "")
-  } else {
-    reqObj.Set("body", string(body))
-  }
+	if readErr != nil {
+		reqObj.Set("body", "")
+	} else {
+		reqObj.Set("body", string(body))
+	}
 
-  headersObj := http.vm.NewObject()
-  for key, values := range r.Header {
-    if len(values) == 1 {
-      headersObj.Set(key, values[0])
-    } else if len(values) > 1 {
-      headersObj.Set(key, values)
-    }
-  }
-  reqObj.Set("headers", headersObj)
+	headersObj := http.vm.NewObject()
+	for key, values := range r.Header {
+		if len(values) == 1 {
+			headersObj.Set(key, values[0])
+		} else if len(values) > 1 {
+			headersObj.Set(key, values)
+		}
+	}
+	reqObj.Set("headers", headersObj)
 
-  return reqObj
+	return reqObj
 }
 
 func (http *HTTP) createServer(call goja.FunctionCall) goja.Value {
-  if len(call.Arguments) < 1 {
-    panic(http.vm.ToValue("createServer requires a request handler function"))
-  }
+	if len(call.Arguments) < 1 {
+		panic(http.vm.ToValue("createServer requires a request handler function"))
+	}
 
-  requestHandler, ok := goja.AssertFunction(call.Arguments[0])
-  if !ok {
-    panic(http.vm.ToValue("argument must be a function"))
-  }
+	requestHandler, ok := goja.AssertFunction(call.Arguments[0])
+	if !ok {
+		panic(http.vm.ToValue("argument must be a function"))
+	}
 
-  serverObj := http.vm.NewObject()
+	serverObj := http.vm.NewObject()
 
-  goServer := &netHttp.Server{
-    Handler: netHttp.HandlerFunc(func(w netHttp.ResponseWriter, r *netHttp.Request) {
-      reqObj := http.createRequestObject(r)
-      resObj := http.vm.NewObject()
+	var keepAliveDone func()
+	var keepAliveOnce sync.Once
 
-      resObj.Set("statusCode", 200)
+	goServer := &netHttp.Server{
+		Handler: netHttp.HandlerFunc(func(w netHttp.ResponseWriter, r *netHttp.Request) {
+			reqObj := http.createRequestObject(r)
+			resObj := http.vm.NewObject()
 
-      resObj.Set("setHeader", func(call goja.FunctionCall) goja.Value {
-        if len(call.Arguments) < 2 {
-          panic(http.vm.ToValue("setHeader requires a name and value"))
-        }
-        headerName := call.Arguments[0].String()
-        headerValue := call.Arguments[1].String()
-        w.Header().Set(headerName, headerValue)
+			resObj.Set("statusCode", 200)
 
-        return goja.Undefined()
-      })
+			resObj.Set("setHeader", func(call goja.FunctionCall) goja.Value {
+				if len(call.Arguments) < 2 {
+					panic(http.vm.ToValue("setHeader requires a name and value"))
+				}
+				headerName := call.Arguments[0].String()
+				headerValue := call.Arguments[1].String()
+				w.Header().Set(headerName, headerValue)
 
-      resObj.Set("end", func(call goja.FunctionCall) goja.Value {
-        statusCode := 200
-        if statusVal := resObj.Get("statusCode"); statusVal != nil && !goja.IsUndefined(statusVal) {
-          statusCode = int(statusVal.ToInteger())
-        }
-        w.WriteHeader(statusCode)
+				return goja.Undefined()
+			})
 
-        if len(call.Arguments) > 0 && !goja.IsUndefined(call.Arguments[0]) {
-          data := call.Arguments[0].String()
-          w.Write([]byte(data))
-        }
+			resObj.Set("end", func(call goja.FunctionCall) goja.Value {
+				statusCode := 200
+				if statusVal := resObj.Get("statusCode"); statusVal != nil && !goja.IsUndefined(statusVal) {
+					statusCode = int(statusVal.ToInteger())
+				}
+				w.WriteHeader(statusCode)
 
-        return goja.Undefined()
-      })
+				if len(call.Arguments) > 0 && !goja.IsUndefined(call.Arguments[0]) {
+					data := call.Arguments[0].String()
+					w.Write([]byte(data))
+				}
 
-      requestHandler(goja.Undefined(), reqObj, resObj)
-    }),
-  }
+				return goja.Undefined()
+			})
 
-  serverObj.Set("listen", func(call goja.FunctionCall) goja.Value {
-    if len(call.Arguments) < 1 {
-      panic(http.vm.ToValue("listen requires a port number"))
-    }
+			requestHandler(goja.Undefined(), reqObj, resObj)
+		}),
+	}
 
-    port := call.Arguments[0].String()
-    addr := ":" + port
+	serverObj.Set("listen", func(call goja.FunctionCall) goja.Value {
+		if len(call.Arguments) < 1 {
+			panic(http.vm.ToValue("listen requires a port number"))
+		}
 
-    var callback goja.Callable
-    if len(call.Arguments) > 1 {
-      callback, _ = goja.AssertFunction(call.Arguments[1])
-    }
+		port := call.Arguments[0].String()
+		bindAddr := "0.0.0.0"
+		argOffset := 1
 
-    goServer.Addr = addr
+		if len(call.Arguments) > 1 {
+			if _, ok := goja.AssertFunction(call.Arguments[1]); !ok {
+				// not a cb, host string provided
+				bindAddr = call.Arguments[1].String()
+				argOffset = 2
+			}
+		}
 
-    http.eventLoop.KeepAlive()
+		var callback goja.Callable
+		if len(call.Arguments) > argOffset {
+			callback, _ = goja.AssertFunction(call.Arguments[argOffset])
+		}
 
-    go func() {
-      err := goServer.ListenAndServe()
-      if err != nil && err != netHttp.ErrServerClosed {
-        fmt.Fprintf(os.Stderr, "Server error: %v\n", err)
-      }
-    }()
+		// Use actual bind address for permission check
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
 
-    if callback != nil {
-      callback(goja.Undefined())
-    }
-    
-    return goja.Undefined()
-  })
+		permHost := bindAddr + ":" + port
+		mgr := permissions.GetManager()
+		canNet := permissions.PermissionNet
+		if !mgr.CheckWithPrompt(ctx, canNet, permHost) {
+			errMsg := mgr.ErrorMessage(canNet, permHost)
+			// throw a JS exception (same behavior pattern as other denied ops)
+			panic(http.vm.ToValue(errMsg))
+		}
 
-  serverObj.Set("websocket", func(call goja.FunctionCall) goja.Value {
-    if len(call.Arguments) < 2 {
-      panic(http.vm.ToValue("websocket requires a url and an object with callback functions"))
-    }
+		// Create listener to learn the actual bound address (handles port "0")
+		ln, err := net.Listen("tcp", bindAddr+":"+port)
+		if err != nil {
+			panic(http.vm.ToValue(err.Error()))
+		}
 
-    wsPath := call.Arguments[0].String()
-    if !strings.HasPrefix(wsPath, "/") {
-      panic(http.vm.NewTypeError("websocket path must start with /"))
-    }
+		// Update server address and expose it on the server object
+		goServer.Addr = ln.Addr().String()
+		serverObj.Set("address", goServer.Addr)
 
-    callbackObj := call.Arguments[1].ToObject(http.vm)
+		// Keep event loop alive until server is closed
+		keepAliveOnce.Do(func() { keepAliveDone = http.eventLoop.KeepAlive() })
 
-    if isArray := callbackObj.Get("constructor").String() == "Array"; isArray || callbackObj == nil {
-      panic(http.vm.NewTypeError("second argument must be an object"))
-    }
+		go func() {
+			err := goServer.Serve(ln)
+			if err != nil && err != netHttp.ErrServerClosed {
+				fmt.Fprintf(os.Stderr, "Server error: %v\n", err)
+			}
+		}()
 
-    var onOpen, onMessage, onClose, onError goja.Callable
+		if callback != nil {
+			callback(goja.Undefined())
+		}
 
-    if openCb := callbackObj.Get("open"); openCb != nil && !goja.IsUndefined(openCb) {
-      onOpen, _ = goja.AssertFunction(openCb)
-    }
+		return goja.Undefined()
+	})
 
-    if messageCb := callbackObj.Get("message"); messageCb != nil && !goja.IsUndefined(messageCb) {
-      onMessage, _ = goja.AssertFunction(messageCb)
-    }
+	serverObj.Set("close", func(call goja.FunctionCall) goja.Value {
+		// Close server and release event loop keep-alive
+		_ = goServer.Close()
+		if keepAliveDone != nil {
+			keepAliveDone()
+			keepAliveDone = nil
+		}
+		return goja.Undefined()
+	})
 
-    if closeCb := callbackObj.Get("close"); closeCb != nil && !goja.IsUndefined(closeCb) {
-      onClose, _ = goja.AssertFunction(closeCb)
-    }
+	serverObj.Set("websocket", func(call goja.FunctionCall) goja.Value {
+		if len(call.Arguments) < 2 {
+			panic(http.vm.ToValue("websocket requires a url and an object with callback functions"))
+		}
 
-    if errorCb := callbackObj.Get("error"); errorCb != nil && !goja.IsUndefined(errorCb) {
-      onError, _ = goja.AssertFunction(errorCb)
-    }
+		wsPath := call.Arguments[0].String()
+		if !strings.HasPrefix(wsPath, "/") {
+			panic(http.vm.NewTypeError("websocket path must start with /"))
+		}
 
-    upgrader := websocket.Upgrader{
-      CheckOrigin: func(r *netHttp.Request) bool {
-        return true
-      },
-    }
+		callbackObj := call.Arguments[1].ToObject(http.vm)
 
-    mux, ok := goServer.Handler.(*netHttp.ServeMux)
-    if !ok {
-      mux = netHttp.NewServeMux()
-      oldHandler := goServer.Handler
-      mux.HandleFunc("/", func(w netHttp.ResponseWriter, r *netHttp.Request) {
-        oldHandler.ServeHTTP(w, r)
-      })
+		if isArray := callbackObj.Get("constructor").String() == "Array"; isArray || callbackObj == nil {
+			panic(http.vm.NewTypeError("second argument must be an object"))
+		}
 
-      goServer.Handler = mux
-    }
+		var onOpen, onMessage, onClose, onError goja.Callable
 
-    mux.HandleFunc(wsPath, func(w netHttp.ResponseWriter, r *netHttp.Request) {
-      conn, err := upgrader.Upgrade(w, r, nil)
-      if err != nil {
-        if onError != nil {
-          errMsg := err.Error() // capture data explicitly
-          http.eventLoop.ScheduleTask(&event.Task{
-            Callback: func() {
-              onError(goja.Undefined(), http.vm.ToValue(errMsg))
-            },
-          })
-        }
-        return
-      }
+		if openCb := callbackObj.Get("open"); openCb != nil && !goja.IsUndefined(openCb) {
+			onOpen, _ = goja.AssertFunction(openCb)
+		}
 
-      wsObj := http.vm.NewObject()
-      
-      const (
-        wsConnecting = 0
-        wsOpen       = 1
-        wsClosing    = 2
-        wsClosed     = 3
-      )
-      
-      var writeMu sync.Mutex
-      var state int = wsOpen
+		if messageCb := callbackObj.Get("message"); messageCb != nil && !goja.IsUndefined(messageCb) {
+			onMessage, _ = goja.AssertFunction(messageCb)
+		}
 
-      // Helper to update state and sync to property
-      // Call this ONLY while holding writeMu lock
-      updateState := func(newState int) {
-        state = newState
-        wsObj.Set("readyState", state)
-      }
-      
-      // Initialize readyState property
-      writeMu.Lock()
-      wsObj.Set("readyState", state)
-      writeMu.Unlock()
+		if closeCb := callbackObj.Get("close"); closeCb != nil && !goja.IsUndefined(closeCb) {
+			onClose, _ = goja.AssertFunction(closeCb)
+		}
 
-      wsObj.Set("CONNECTING", wsConnecting)
-      wsObj.Set("OPEN", wsOpen)
-      wsObj.Set("CLOSING", wsClosing)
-      wsObj.Set("CLOSED", wsClosed)
+		if errorCb := callbackObj.Get("error"); errorCb != nil && !goja.IsUndefined(errorCb) {
+			onError, _ = goja.AssertFunction(errorCb)
+		}
 
-      wsObj.Set("send", func(call goja.FunctionCall) goja.Value {
-        if len(call.Arguments) < 1 {
-          panic(http.vm.ToValue("send requires a message"))
-        }
+		upgrader := websocket.Upgrader{
+			CheckOrigin: func(r *netHttp.Request) bool {
+				return true
+			},
+		}
 
-        writeMu.Lock()
-        currentState := state
-        writeMu.Unlock()
+		mux, ok := goServer.Handler.(*netHttp.ServeMux)
+		if !ok {
+			mux = netHttp.NewServeMux()
+			oldHandler := goServer.Handler
+			mux.HandleFunc("/", func(w netHttp.ResponseWriter, r *netHttp.Request) {
+				oldHandler.ServeHTTP(w, r)
+			})
 
-        if currentState != wsOpen {
-          panic(http.vm.ToValue("websocket connection is not open"))
-        }
+			goServer.Handler = mux
+		}
 
-        message := call.Arguments[0].String()
+		mux.HandleFunc(wsPath, func(w netHttp.ResponseWriter, r *netHttp.Request) {
+			conn, err := upgrader.Upgrade(w, r, nil)
+			if err != nil {
+				if onError != nil {
+					errMsg := err.Error() // capture data explicitly
+					http.eventLoop.ScheduleTask(&event.Task{
+						Callback: func() {
+							onError(goja.Undefined(), http.vm.ToValue(errMsg))
+						},
+					})
+				}
+				return
+			}
 
-        writeMu.Lock()
-        err := conn.WriteMessage(websocket.TextMessage, []byte(message))
-        writeMu.Unlock()
+			wsObj := http.vm.NewObject()
 
-        if err != nil && onError != nil {
-          errMsg := err.Error()
-          http.eventLoop.ScheduleTask(&event.Task{
-            Callback: func() {
-              onError(goja.Undefined(), http.vm.ToValue(errMsg))
-            },
-          })
-        }
+			const (
+				wsConnecting = 0
+				wsOpen       = 1
+				wsClosing    = 2
+				wsClosed     = 3
+			)
 
-        return goja.Undefined()
-      })
+			var writeMu sync.Mutex
+			var state int = wsOpen
+			ctx, cancel := context.WithCancel(context.Background())
 
-      wsObj.Set("close", func(call goja.FunctionCall) goja.Value {
-        writeMu.Lock()
-        if state == wsOpen {
-          updateState(wsClosing)
-        }
-        writeMu.Unlock()
+			// Initialize readyState property
+			wsObj.Set("readyState", state)
 
-        return goja.Undefined()
-      })
+			wsObj.Set("CONNECTING", wsConnecting)
+			wsObj.Set("OPEN", wsOpen)
+			wsObj.Set("CLOSING", wsClosing)
+			wsObj.Set("CLOSED", wsClosed)
 
-      if onOpen != nil {
-        http.eventLoop.ScheduleTask(&event.Task{
-          Callback: func() {
-            onOpen(goja.Undefined(), wsObj)
-          },
-        })
-      }
+			wsObj.Set("send", func(call goja.FunctionCall) goja.Value {
+				if len(call.Arguments) < 1 {
+					panic(http.vm.ToValue("send requires a message"))
+				}
 
-      go func() {
-        defer func() {
-          writeMu.Lock()
-          updateState(wsClosed)
-          writeMu.Unlock()
-          conn.Close()
-        }()
+				writeMu.Lock()
+				currentState := state
+				writeMu.Unlock()
 
-        for {
-          messageType, message, err := conn.ReadMessage()
+				if currentState != wsOpen {
+					panic(http.vm.ToValue("websocket connection is not open"))
+				}
 
-          if err != nil {
-            if onError != nil {
-              errMsg := err.Error()
-              http.eventLoop.ScheduleTask(&event.Task{
-                Callback: func() {
-                  onError(goja.Undefined(), http.vm.ToValue(errMsg))
-                },
-              })
-            }
-            break
-          }
+				message := call.Arguments[0].String()
 
-          if onMessage != nil {
-            var msgData any
-            if messageType == websocket.TextMessage {
-              msgData = string(message)
-            } else {
-              msgData = message
-            }
+				writeMu.Lock()
+				err := conn.WriteMessage(websocket.TextMessage, []byte(message))
+				writeMu.Unlock()
 
-            // capture data explicitly in the closure
-            capturedData := msgData
-            capturedType := messageType
+				if err != nil && onError != nil {
+					errMsg := err.Error()
+					http.eventLoop.ScheduleTask(&event.Task{
+						Callback: func() {
+							onError(goja.Undefined(), http.vm.ToValue(errMsg))
+						},
+					})
+				}
 
-            http.eventLoop.ScheduleTask(&event.Task{
-              Callback: func() {
-                msgObj := http.vm.NewObject()
-                msgObj.Set("data", capturedData)
-                msgObj.Set("type", capturedType)
-                onMessage(goja.Undefined(), msgObj)
-              },
-            })
-          }
-        }
+				return goja.Undefined()
+			})
 
-        writeMu.Lock()
-        if state != wsClosed {
-          updateState(wsClosing)
-        }
-        writeMu.Unlock()
+			wsObj.Set("close", func(call goja.FunctionCall) goja.Value {
+				writeMu.Lock()
+				if state == wsOpen || state == wsConnecting {
+					state = wsClosing
+					// Send close message to client
+					closeMsg := websocket.FormatCloseMessage(websocket.CloseNormalClosure, "")
+					conn.WriteControl(websocket.CloseMessage, closeMsg, time.Now().Add(time.Second))
+					// Cancel context to stop read loop
+					cancel()
+				}
+				writeMu.Unlock()
 
-        if onClose != nil {
-          http.eventLoop.ScheduleTask(&event.Task{
-            Callback: func() {
-              onClose(goja.Undefined())
-            },
-          })
-        }
-      }()
-    })
+				// Update readyState outside of mutex
+				wsObj.Set("readyState", state)
 
-    return goja.Undefined()
-  })
+				return goja.Undefined()
+			})
 
-  return serverObj
+			if onOpen != nil {
+				http.eventLoop.ScheduleTask(&event.Task{
+					Callback: func() {
+						onOpen(goja.Undefined(), wsObj)
+					},
+				})
+			}
+
+			go func() {
+				defer func() {
+					cancel() // Ensure context is cancelled
+					writeMu.Lock()
+					state = wsClosed
+					writeMu.Unlock()
+					wsObj.Set("readyState", wsClosed)
+					conn.Close()
+				}()
+
+				// Set up read deadline check based on context
+				readDone := make(chan struct{})
+				go func() {
+					<-ctx.Done()
+					conn.SetReadDeadline(time.Now()) // Force read to fail
+					close(readDone)
+				}()
+
+				for {
+					// Check if context was cancelled
+					select {
+					case <-ctx.Done():
+						// Clean close initiated by user
+						return
+					default:
+					}
+
+					messageType, message, err := conn.ReadMessage()
+
+					if err != nil {
+						// Don't report error if it was due to intentional close
+						select {
+						case <-ctx.Done():
+							// Intentional close, don't call onError
+						default:
+							if onError != nil {
+								errMsg := err.Error()
+								http.eventLoop.ScheduleTask(&event.Task{
+									Callback: func() {
+										onError(goja.Undefined(), http.vm.ToValue(errMsg))
+									},
+								})
+							}
+						}
+						break
+					}
+
+					if onMessage != nil {
+						var msgData any
+						if messageType == websocket.TextMessage {
+							msgData = string(message)
+						} else {
+							msgData = message
+						}
+
+						// capture data explicitly in the closure
+						capturedData := msgData
+						capturedType := messageType
+
+						http.eventLoop.ScheduleTask(&event.Task{
+							Callback: func() {
+								msgObj := http.vm.NewObject()
+								msgObj.Set("data", capturedData)
+								msgObj.Set("type", capturedType)
+								onMessage(goja.Undefined(), msgObj)
+							},
+						})
+					}
+				}
+
+				var shouldUpdateState bool
+				writeMu.Lock()
+				if state != wsClosed {
+					state = wsClosing
+					shouldUpdateState = true
+				}
+				writeMu.Unlock()
+
+				if shouldUpdateState {
+					wsObj.Set("readyState", wsClosing)
+				}
+
+				if onClose != nil {
+					http.eventLoop.ScheduleTask(&event.Task{
+						Callback: func() {
+							onClose(goja.Undefined())
+						},
+					})
+				}
+			}()
+		})
+
+		return goja.Undefined()
+	})
+
+	return serverObj
 }
-

@@ -1,6 +1,6 @@
 # Dougless Runtime
 
-A custom JavaScript runtime built in Go, designed to eventually serve as the foundation for a custom full-stack framework (but that's a half-baked idea tbh).
+> *"JavaScript is really quite nice."* — Ryan Dahl
 
 ## Overview
 
@@ -9,119 +9,128 @@ Dougless Runtime is a custom runtime designed with the end goal of serving a cus
 ## Features
 
 - 🚀 **High-performance JavaScript execution** using Goja (pure Go, ES5.1)
+- 🔒 **Security-first permissions** - Interactive prompts with context-aware defaults
 - ✅ **File I/O operations** with async callback APIs
 - ✅ **HTTP client and server** support
 - 🌐 **Global-first API** - core functionality available without require()
 - ⚡ **Event loop** with proper async operation handling
 - 📦 **CommonJS module system** for additional modules
 
-### Recently Completed
-- ✅ **WebSocket** implementation for real-time applications (Phase 4)
+## 🔒 Security & Permissions
 
-### Planned
-- 📦 **Package manager** - npm/bun-style dependency management (`dougless install`)
-- 🔒 **Crypto utilities** and security features
-- 🛠️ **Process management** and system integration
-- 🎯 **ES6+ support** through transpilation (future phases)
+Dougless implements a comprehensive permission system that addresses security concerns while maintaining developer experience.
+
+### Interactive Permission Prompts
+
+Dougless features **context-aware permission prompting** that balances security with usability:
+
+#### Development Mode (Interactive Terminal)
+When running scripts interactively, Dougless prompts for permissions as needed:
+
+```bash
+./dougless script.js
+
+# When script tries to read a file:
+⚠️  Permission request: read access to '/data/config.json'
+Allow? (y/n/always): always
+✓ Granted permanently (this session)
+
+# Second access to same file - no prompt (cached)
+# Different file - prompts again
+```
+
+**Prompt responses:**
+- `y` or `yes` - Grant temporarily (this one operation)
+- `a` or `always` - Grant permanently for this session
+- `n` or anything else - Deny
+
+#### Production/CI Mode (Non-Interactive)
+Automatically uses **strict deny-by-default** in non-interactive environments:
+
+```bash
+echo "file.read('/etc/passwd')" | ./dougless
+# Error: Permission denied - no prompts in non-interactive mode
+```
+
+### Explicit Permission Flags
+
+For production deployments and fine-grained control:
+
+```bash
+# Grant specific file access
+./dougless --allow-read=/data script.js
+
+# Grant all read access
+./dougless --allow-read script.js
+
+# Grant network access to specific host
+./dougless --allow-net=api.example.com script.js
+
+# Multiple permissions
+./dougless --allow-read=/data --allow-net=api.example.com script.js
+
+# Grant all permissions (for trusted scripts)
+./dougless --allow-all script.js
+
+# Force strict mode even in interactive terminal
+./dougless --no-prompt script.js
+```
+
+### Permission Types
+
+- **`--allow-read[=<paths>]`** - File system read access
+  - No path = allow all reads
+  - With path = allow specific path and subdirectories
+- **`--allow-write[=<paths>]`** - File system write access
+- **`--allow-net[=<hosts>]`** - Network access (HTTP/WebSocket)
+  - Supports wildcards: `*.example.com`
+  - Port-specific: `localhost:3000`
+- **`--allow-env[=<vars>]`** - Environment variable access (future)
+- **`--allow-run[=<programs>]`** - Subprocess execution (future)
+- **`--allow-all`** or **`-A`** - Grant all permissions
+
+### Clear Error Messages
+
+When permission is denied, Dougless provides actionable guidance:
+
+```
+Permission denied: read access to '/tmp/config.json'
+
+Run your script with:
+  dougless --allow-read=/tmp/config.json script.js
+
+Or grant all read access:
+  dougless --allow-read script.js
+
+For dev, use:
+  dougless --allow-all script.js
+
+Or interactive mode:
+  dougless --prompt script.js
+```
+
+### Smart Defaults
+
+- ✅ **Interactive terminal** → Automatic prompt mode (convenient for dev)
+- ✅ **Non-interactive** → Strict deny-by-default (secure for CI/production)
+- ✅ **Context-aware** → Detects environment automatically
+- ✅ **Session-based caching** → "always" grants persist for script lifetime
+- ✅ **30-second timeout** → Auto-deny if no response to prompt
+- ✅ **Thread-safe** → Concurrent permission checks handled correctly
+
+### Security Benefits
+
+1. **Prevent unauthorized file access** - Scripts can't read sensitive files without permission
+2. **Control network access** - Prevent scripts from making unexpected HTTP requests
+3. **Audit script behavior** - Interactive prompts reveal what scripts are trying to do
+4. **Safe defaults** - Non-interactive environments are secure by default
+5. **No silent failures** - Clear error messages guide proper usage
 
 ## Current Status
 
-**Phases 1-4 COMPLETE! ✅**
-- Phase 1: Foundation ✅
-- Phase 2: File System & Modules ✅  
-- Phase 3: Networking & HTTP ✅
-- Phase 4: WebSockets & Real-time ✅
+**Phases 1-4 Complete!** ✅ All core features including permissions, file I/O, HTTP, and WebSockets are fully implemented and tested.
 
-All core features are fully implemented, tested, and validated.
-
-Currently implemented:
-
-### Core Infrastructure ✅
-- ✅ Basic project structure and Go module setup
-- ✅ Core runtime with Goja integration
-- ✅ Event loop with proper async operation handling
-- ✅ Module registry system with CommonJS-style require()
-- ✅ Placeholder implementations for fs, http, and path modules
-
-### Timer System ✅
-- ✅ `setTimeout()` - Schedule one-time delayed execution
-- ✅ `setInterval()` - Schedule recurring execution
-- ✅ `clearTimeout()` - Cancel pending timeouts
-- ✅ `clearInterval()` - Cancel active intervals
-- ✅ Proper WaitGroup management for graceful shutdown
-
-### Console Operations ✅
-- ✅ `console.log()`, `console.error()`, `console.warn()` - Standard output
-- ✅ `console.time()` / `console.timeEnd()` - Performance measurement
-- ✅ `console.table()` - Structured data visualization with table formatting
-
-### REPL (Interactive Shell) ✅
-- ✅ Interactive JavaScript evaluation
-- ✅ Multi-line input support (automatic detection)
-- ✅ State preservation between commands
-- ✅ Special commands (`.help`, `.exit`, `.clear`)
-- ✅ Proper error handling and display
-
-### Path Module ✅
-- ✅ `path.join()` - Join path segments
-- ✅ `path.resolve()` - Resolve absolute paths
-- ✅ `path.dirname()` - Get directory name
-- ✅ `path.basename()` - Get file name
-- ✅ `path.extname()` - Get file extension
-- ✅ `path.sep` - OS-specific path separator
-
-### File Module ✅ (Unique Global API)
-- ✅ `file.read()` - Read file contents
-- ✅ `file.write()` - Write data to file
-- ✅ `file.readdir()` - List directory contents
-- ✅ `file.exists()` - Check if path exists
-- ✅ `file.mkdir()` - Create directory
-- ✅ `file.rmdir()` - Remove directory
-- ✅ `file.unlink()` - Delete file
-- ✅ `file.stat()` - Get file/directory information
-- ✅ Global access (no `require()` needed!)
-
-### HTTP Module ✅ (Unique Global API)
-- ✅ `http.get()` - Make HTTP GET requests with callbacks
-- ✅ `http.post()` - Make HTTP POST requests with JSON payload
-- ✅ `http.createServer()` - Create HTTP server
-- ✅ Server request/response handling
-- ✅ Custom header support (`setHeader()`)
-- ✅ Response status codes and body content
-- ✅ Multiple header values support
-- ✅ Global access (no `require()` needed!)
-
-### WebSocket Module ✅ (Phase 4 Complete!)
-- ✅ `server.websocket(path, callbacks)` - Add WebSocket endpoint to server
-- ✅ Real-time bidirectional communication
-- ✅ Connection state management (`readyState` property)
-- ✅ Browser-compatible API (CONNECTING, OPEN, CLOSING, CLOSED)
-- ✅ Thread-safe message sending with mutex protection
-- ✅ Broadcasting to multiple clients
-- ✅ Event callbacks: `open`, `message`, `close`, `error`
-- ✅ `ws.send()`, `ws.close()` methods on connection object
-
-### Testing & Quality ✅
-- ✅ **Tests passing** (unit + integration)
-- ✅ **~75% code coverage** across all packages
-- ✅ **Benchmark suite** for performance tracking
-- ✅ **Race condition testing** (thread-safe event loop)
-- ✅ Full test coverage for file system and path modules
-- ✅ WebSocket examples and documentation
-
-### Next Up (Phase 5)
-- ⏳ Promises and Promise-based APIs
-- ⏳ async/await syntax support
-- ⏳ Error handling improvements
-
-### Future Features
-- 📦 **Package Manager** (Post Phase 4)
-  - Dependency resolution and installation (`dougless install <package>`)
-  - Package manifest (`dougless.json`) with version management
-  - Lock file for reproducible builds (`dougless-lock.json`)
-  - Support for npm registry compatibility
-  - Local module cache and `dougless_modules/` directory
-  - Enhanced `require()` to support external packages
+📋 **See [ROADMAP.md](ROADMAP.md) for detailed implementation status and future plans.**
 
 ## Quick Start
 
@@ -255,23 +264,13 @@ dougless-runtime/
 
 ## Documentation
 
-### Planning & Architecture
-- **[Project Plan](docs/project_plan.md)** - Comprehensive development roadmap with 8 phases, technical architecture details, and success metrics
+- **[ROADMAP.md](ROADMAP.md)** - Development phases, implementation status, and future plans
+- **[Project Plan](docs/project_plan.md)** - Technical architecture details and success metrics
 - **[REPL Guide](docs/repl_guide.md)** - Complete guide to using the interactive REPL shell
-- **[File API Guide](docs/file_api.md)** - Complete reference for the global `file` API with examples
-- **[HTTP API Guide](docs/http_api.md)** - Complete reference for the global `http` API with examples
+- **[File API Guide](docs/file_api.md)** - Complete reference for the global `file` API
+- **[HTTP API Guide](docs/http_api.md)** - Complete reference for the global `http` API
 - **[HTTP Design](docs/http_design.md)** - HTTP module design and implementation details
-- **[Changelog](CHANGELOG.md)** - Detailed history of changes, features, and improvements
-
-### Development Phases
-1. **Foundation** ✅ - Basic runtime with console operations and timers
-2. **File System & Modules** ✅ - File I/O and robust module system
-3. **Networking & HTTP** ✅ - HTTP client/server capabilities
-4. **WebSockets & Real-time** ✅ - WebSocket implementation with broadcasting
-5. **Advanced Async & Promises** (Current) - Promise support and async/await
-6. **Crypto & Security** - Cryptographic functions and security features
-7. **Process & System Integration** - System-level operations
-8. **Performance & Optimization** - Production-ready optimizations
+- **[Changelog](CHANGELOG.md)** - Detailed history of changes and features
 
 ## Technology Stack
 

@@ -7,9 +7,15 @@ import (
 
 	"github.com/dop251/goja"
 	"github.com/douglasjordan2/dougless/internal/event"
+	"github.com/douglasjordan2/dougless/internal/permissions"
 )
 
 func setupFileTest(t *testing.T) (*goja.Runtime, *FileSystem) {
+  // Grant all permissions for tests
+  manager := permissions.NewManager()
+  manager.GrantAll()
+  permissions.SetGlobalManager(manager)
+
   vm := goja.New()
   loop := event.NewLoop()
   fs := NewFileSystem(loop)
