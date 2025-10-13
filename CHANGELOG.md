@@ -175,7 +175,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Request body parsing working correctly
 - Multiple header values handled correctly
 
-## Upcoming (Phase 4)
+## [Phase 4] - October 2024 - IN PROGRESS 🚧
+
+### Security & Permissions System
+- **Context-Aware Permission Management** (Deno-inspired)
+  - Runtime permission checks for file, network, and environment access
+  - User prompts for permission granting in interactive mode
+  - CLI flags for explicit permission grants:
+    - `--allow-read[=path]` - Grant read access (optionally to specific paths)
+    - `--allow-write[=path]` - Grant write access (optionally to specific paths)
+    - `--allow-net[=host]` - Grant network access (optionally to specific hosts)
+    - `--allow-env[=var]` - Grant environment variable access
+    - `--allow-run[=program]` - Grant subprocess execution access
+    - `--allow-all` - Grant all permissions (for development)
+  - Interactive permission prompts with options:
+    - `y/yes` - Grant temporarily (one-time)
+    - `n/no` - Deny access
+    - `a/always` - Grant permanently for session
+  - Permission caching for repeated access
+  - Automatic terminal detection for prompt mode
+  
+- **Path-Based Permissions**
+  - Hierarchical path matching (parent directory grants access to children)
+  - Prevents path traversal escapes (../ attacks)
+  - Absolute path resolution and normalization
+  
+- **Network Permissions**
+  - Host and port-based granular control
+  - Wildcard domain support (`*.example.com`)
+  - Localhost/loopback normalization (127.0.0.1, ::1, localhost)
+  - Port defaulting for standard HTTP/HTTPS
+  
+- **Permission Error Messages**
+  - Clear, actionable error messages
+  - Suggested command-line flags for fixing permission issues
+  - Examples for both specific and broad permission grants
+
+### Architecture Improvements
+- Global permission manager with thread-safe operations
+- CLI flag parsing with support for comma-separated values
+- Permission descriptor system for structured permission requests
+- Mutex-protected prompt handling for concurrent operations
+- Context-based timeout support for permission prompts
+
+### Examples Added
+- `examples/test_permissions.js` - Concurrent permission testing
+- `examples/test_permissions_sequential.js` - Sequential interactive testing
+
+### Documentation
+- Moved roadmap from README.md to dedicated ROADMAP.md
+- Updated WARP.md with permission system details
+- Comprehensive permission documentation in README
+
+### Bug Fixes
+- Fixed stdin buffering issues in permission prompts
+- Create fresh bufio.Reader for each prompt to avoid state issues
+- Improved error handling in permission checks
+
+## Upcoming
 
 ### Planned Features
 - **WebSocket Support**
