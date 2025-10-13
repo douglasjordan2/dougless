@@ -126,12 +126,6 @@ Or interactive mode:
 4. **Safe defaults** - Non-interactive environments are secure by default
 5. **No silent failures** - Clear error messages guide proper usage
 
-## Current Status
-
-**Phases 1-4 Complete!** ✅ All core features including permissions, file I/O, HTTP, and WebSockets are fully implemented and tested.
-
-📋 **See [ROADMAP.md](ROADMAP.md) for detailed implementation status and future plans.**
-
 ## Quick Start
 
 ### Prerequisites
@@ -351,6 +345,8 @@ This project is in early development. Contributions, ideas, and feedback are wel
 - Provide a custom plugin system for extending framework capabilities
 - Create a new paradigm for web development focused on real-time communication
 - Globals-first API design for simplicity and developer experience
+
+📋 **See [ROADMAP.md](ROADMAP.md) for detailed implementation status and future plans.**
 
 ---
 
