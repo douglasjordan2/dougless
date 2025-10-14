@@ -289,7 +289,7 @@ withTimeout(
 
 ---
 
-### `Promise.allSettled(promises)`
+### (TODO) `Promise.allSettled(promises)`
 
 Wait for all promises to settle (either fulfilled or rejected).
 
@@ -332,7 +332,7 @@ Promise.allSettled(promises).then(function(results) {
 
 ---
 
-### `Promise.any(promises)`
+### (TODO) `Promise.any(promises)`
 
 Wait for the first promise to fulfill. Reject only if all promises reject.
 
