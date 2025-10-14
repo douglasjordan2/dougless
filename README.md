@@ -296,12 +296,10 @@ dougless-runtime/
 ## Documentation
 
 - **[ROADMAP.md](ROADMAP.md)** - Development phases, implementation status, and future plans
-- **[Project Plan](docs/project_plan.md)** - Technical architecture details and success metrics
 - **[REPL Guide](docs/repl_guide.md)** - Complete guide to using the interactive REPL shell
 - **[Promises API Guide](docs/promises_api.md)** - Complete reference for Promises and async/await
 - **[File API Guide](docs/file_api.md)** - Complete reference for the global `file` API
 - **[HTTP API Guide](docs/http_api.md)** - Complete reference for the global `http` API
-- **[HTTP Design](docs/http_design.md)** - HTTP module design and implementation details
 - **[Changelog](CHANGELOG.md)** - Detailed history of changes and features
 
 ## Technology Stack
