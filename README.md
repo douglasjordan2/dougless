@@ -9,6 +9,8 @@ Dougless Runtime is a custom runtime designed with the end goal of serving a cus
 ## Features
 
 - 🚀 **High-performance JavaScript execution** using Goja (pure Go, ES5.1)
+- ✨ **ES6+ Support** - Arrow functions, async/await, classes, and more via esbuild transpilation
+- 🎯 **Native Promises** - Full Promise/A+ implementation with all static methods
 - 🔒 **Security-first permissions** - Interactive prompts with context-aware defaults
 - ✅ **File I/O operations** with async callback APIs
 - ✅ **HTTP client and server** support
@@ -200,33 +202,67 @@ http.get('http://api.example.com/data', (err, response) => {
 })
 ```
 
-### WebSocket Support (Real-time Communication)
-Built-in WebSocket support for real-time applications:
+### Native Promises & Async/Await
+Dougless has full Promise/A+ support built-in, with modern async/await syntax:
 
 ```javascript
-// Create server with WebSocket endpoint
-const server = http.createServer((req, res) => {
-  res.end('WebSocket server');
-});
+// Promises are available globally!
+const readFile = (path) => {
+  return new Promise((resolve, reject) => {
+    file.read(path, (err, data) => {
+      if (err) reject(err);
+      else resolve(data);
+    });
+  });
+};
 
-server.websocket('/chat', {
-  open: function(ws) {
-    console.log('Client connected');
-    console.log('State:', ws.readyState === ws.OPEN); // true
-    ws.send('Welcome!');
-  },
-  
-  message: function(msg) {
-    console.log('Received:', msg.data);
-    ws.send('Echo: ' + msg.data);
-  },
-  
-  close: function() {
-    console.log('Client disconnected');
+// Use async/await with automatic transpilation
+async function processFiles() {
+  try {
+    const data1 = await readFile('file1.txt');
+    const data2 = await readFile('file2.txt');
+    console.log('Files loaded:', data1, data2);
+  } catch (err) {
+    console.error('Error:', err);
   }
-});
+}
 
-server.listen(8080);  // Server stays running automatically!
+processFiles();
+
+// All Promise methods available
+Promise.all([readFile('a.txt'), readFile('b.txt')])
+  .then(files => console.log('All files:', files))
+  .catch(err => console.error('Failed:', err));
+```
+
+### ES6+ Modern Syntax
+Write modern JavaScript with automatic transpilation:
+
+```javascript
+// Arrow functions, template literals, destructuring
+const users = ['Alice', 'Bob', 'Charlie'];
+const greetings = users.map(user => `Hello, ${user}!`);
+
+// Classes and inheritance
+class Person {
+  constructor(name) {
+    this.name = name;
+  }
+  
+  greet() {
+    return `Hi, I'm ${this.name}`;
+  }
+}
+
+const person = new Person('Douglas');
+console.log(person.greet()); // "Hi, I'm Douglas"
+
+// Async/await for clean async code
+async function fetchData() {
+  const response = await fetch('https://api.example.com/data');
+  const data = await response.json();
+  return data;
+}
 ```
 
 ### Always Available Globals
@@ -235,6 +271,7 @@ console.log('Logging');          // ✅ Built-in
 file.read('file.txt', callback); // ✅ Built-in
 http.get('http://...', callback);// ✅ Built-in
 setTimeout(callback, 1000);      // ✅ Built-in
+Promise.resolve(value);          // ✅ Built-in
 
 const path = require('path');    // Module system still available
 ```
@@ -261,6 +298,7 @@ dougless-runtime/
 - **[ROADMAP.md](ROADMAP.md)** - Development phases, implementation status, and future plans
 - **[Project Plan](docs/project_plan.md)** - Technical architecture details and success metrics
 - **[REPL Guide](docs/repl_guide.md)** - Complete guide to using the interactive REPL shell
+- **[Promises API Guide](docs/promises_api.md)** - Complete reference for Promises and async/await
 - **[File API Guide](docs/file_api.md)** - Complete reference for the global `file` API
 - **[HTTP API Guide](docs/http_api.md)** - Complete reference for the global `http` API
 - **[HTTP Design](docs/http_design.md)** - HTTP module design and implementation details
@@ -270,10 +308,11 @@ dougless-runtime/
 
 ### Core Dependencies
 - **[Goja](https://github.com/dop251/goja)** - Pure Go JavaScript engine (ES5.1)
+- **[esbuild](https://esbuild.github.io/)** - Ultra-fast ES6+ to ES5 transpilation ✅
 - **Go standard library** - For system operations, networking, and crypto
 
 ### Current Dependencies
-- **[gorilla/websocket](https://github.com/gorilla/websocket)** - WebSocket implementation ✅
+- **[gorilla/websocket](https://github.com/gorilla/websocket)** - WebSocket implementation (Phase 6)
 
 ## Inspiration & References
 
