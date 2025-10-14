@@ -139,6 +139,17 @@ Modules are registered in the registry and accessed via `require()`. Current mod
 - **path**: Path manipulation utilities (require-able)
 - **file**: File system operations (global API)
 - **http**: HTTP client/server functionality (global API)
+- **promise**: Promise/A+ implementation (global API)
+
+### Promise System
+
+The Promise implementation provides full Promise/A+ compliance:
+- **Promise Constructor**: `new Promise(executor)` with resolve/reject callbacks
+- **Promise Methods**: `.then()`, `.catch()` for chaining and error handling
+- **Static Methods**: `Promise.resolve()`, `Promise.reject()`, `Promise.all()`, `Promise.race()`, `Promise.allSettled()`, `Promise.any()`
+- **State Management**: Proper state transitions (Pending → Fulfilled/Rejected)
+- **Event Loop Integration**: Handler execution scheduled via event loop
+- **Thread Safety**: Mutex-protected state management
 
 ### Event Loop Design
 
@@ -194,7 +205,29 @@ All Phase 1 objectives have been successfully implemented:
 - ✅ Unique global `http` API (no require needed)
 - ✅ Event loop integration for async HTTP operations
 
-### Currently Starting: Phase 4 (WebSockets & Real-time)
+### Phase 4 (Security & Permissions) - COMPLETE ✅
+- ✅ Deno-inspired permission system
+- ✅ CLI flags for permission grants (--allow-read, --allow-write, --allow-net, etc.)
+- ✅ Interactive permission prompts in terminal mode
+- ✅ Path-based and network-based granular controls
+- ✅ Permission caching and session management
+- ✅ Clear error messages with actionable suggestions
+
+### Phase 5 (Promises & ES6+) - COMPLETE ✅
+- ✅ Full Promise/A+ implementation
+  - Promise constructor with resolve/reject
+  - Promise chaining with .then() and .catch()
+  - Static methods: resolve, reject, all, race, allSettled, any
+- ✅ ES6+ Transpilation with esbuild
+  - Arrow functions, template literals, destructuring
+  - let/const declarations, spread operator
+  - Classes and inheritance
+  - async/await (transpiled to Promises)
+  - Automatic source transformation
+- ✅ Event loop integration for promise resolution
+- ✅ Thread-safe promise state management
+
+### Currently Starting: Phase 6 (WebSockets & Real-time)
 - WebSocket client and server
 - Real-time bidirectional communication
 - Connection management
@@ -202,25 +235,35 @@ All Phase 1 objectives have been successfully implemented:
 ## Key Implementation Files
 
 ### Runtime Core
-- **Runtime initialization**: `internal/runtime/runtime.go:26-43` (New() function)
-- **Script execution**: `internal/runtime/runtime.go:46-71` (ExecuteFile/Execute)
-- **Module loading**: `internal/runtime/runtime.go:230-243` (requireFunction)
+- **Runtime initialization**: `internal/runtime/runtime.go:42-60` (New() function)
+- **Script execution**: `internal/runtime/runtime.go:63-94` (ExecuteFile/Execute)
+- **Transpilation**: `internal/runtime/runtime.go:96-131` (transpile function)
+- **Module loading**: `internal/runtime/runtime.go:169-183` (requireFunction)
+- **Global initialization**: `internal/runtime/runtime.go:133-157` (initializeGlobals)
 
 ### Event Loop
-- **Event loop core**: `internal/event/loop.go:40-59` (Run() method)
-- **Task scheduling**: `internal/event/loop.go:86-93` (ScheduleTask)
-- **Delayed task handling**: `internal/event/loop.go:96-115` (scheduleDelayedTask)
-- **Timer cancellation**: `internal/event/loop.go:118-127` (ClearTimer)
+- **Event loop core**: `internal/event/loop.go` (Run() method)
+- **Task scheduling**: `internal/event/loop.go` (ScheduleTask)
+- **Delayed task handling**: `internal/event/loop.go` (scheduleDelayedTask)
+- **Timer cancellation**: `internal/event/loop.go` (ClearTimer)
 
-### Timer System
-- **Timer helper**: `internal/runtime/runtime.go:167-198` (delayHelper)
-- **setTimeout/setInterval**: `internal/runtime/runtime.go:201-207` (setTimeout/setInterval)
-- **Clear functions**: `internal/runtime/runtime.go:209-227` (clearHelper/clearTimeout/clearInterval)
+### Promise System
+- **Promise constructor**: `internal/modules/promise.go:30-55` (NewPromise)
+- **Promise resolution**: `internal/modules/promise.go:57-79` (resolve method)
+- **Promise rejection**: `internal/modules/promise.go:81-103` (reject method)
+- **Promise chaining**: `internal/modules/promise.go:105-195` (Then method)
+- **Promise catch**: `internal/modules/promise.go:197-199` (Catch method)
+- **Promise.all**: `internal/modules/promise.go:201-280` (PromiseAll)
+- **Promise.race**: `internal/modules/promise.go:282-340` (PromiseRace)
+- **Promise.allSettled**: `internal/modules/promise.go:342-420` (PromiseAllSettled)
+- **Promise.any**: `internal/modules/promise.go:422-490` (PromiseAny)
+- **Setup function**: `internal/modules/promise.go:492-520` (SetupPromise)
 
-### Console Operations
-- **Basic console**: `internal/runtime/runtime.go:101-128` (consoleLog/Error/Warn)
-- **Timer console**: `internal/runtime/runtime.go:130-165` (consoleTime/timeEnd)
-- **Table console**: `internal/runtime/runtime.go:170-279` (consoleTable/helpers)
+### Transpilation
+- **ES6+ Transpilation**: `internal/runtime/runtime.go:96-131` (transpile function)
+  - Uses esbuild API for transformation
+  - Target: ES2017 for async/await support
+  - Handles errors and warnings with line-accurate reporting
 
 ## Future Development Phases
 
@@ -228,13 +271,14 @@ The project follows an 8-phase development plan:
 1. Foundation ✅
 2. File System & Modules ✅
 3. Networking & HTTP ✅
-4. WebSockets & Real-time (Current)
-5. Advanced Async & Promises
-6. Crypto & Security
-7. Process & System Integration
-8. Performance & Optimization
+4. Security & Permissions ✅
+5. Promises & ES6+ ✅
+6. WebSockets & Real-time (Current)
+7. Crypto & Security
+8. Process & System Integration
+9. Performance & Optimization
 
-### Post Phase 4: Package Manager
+### Post Phase 6: Package Manager
 After completing the core runtime phases, a package management system is planned:
 - **Package Installation**: `dougless install <package>` - npm-style package installation
 - **Dependency Management**: `dougless.json` manifest with `dougless-lock.json` for reproducibility
@@ -247,14 +291,22 @@ After completing the core runtime phases, a package management system is planned
 
 See `docs/project_plan.md` for detailed phase descriptions and milestones.
 
-## Transpilation Strategy
+## Transpilation Strategy (IMPLEMENTED ✅)
 
-The runtime will support ES6+ through build-time transpilation to ES5:
-- Primary tool: esbuild (Go native integration)
-- Alternative options: Babel, SWC, TypeScript compiler
-- Implementation approaches: on-the-fly, build-time, or hybrid
+The runtime now supports ES6+ through automatic transpilation to ES5:
+- **Implementation**: esbuild (Go native integration)
+- **Target**: ES2017 for async/await support
+- **Approach**: On-the-fly transpilation during script execution
+- **Features Supported**:
+  - Arrow functions and template literals
+  - let/const declarations
+  - Destructuring and spread operator
+  - Classes and inheritance
+  - async/await (converted to Promise chains)
+- **Error Handling**: Line-accurate error reporting with source context
+- **Warnings**: Display non-fatal transpilation warnings to stderr
 
-See `docs/transpilation_strategy.md` for complete strategy details.
+See `docs/transpilation_strategy.md` for complete strategy details and `internal/runtime/runtime.go:96-131` for implementation.
 
 ## Performance Targets
 
@@ -265,9 +317,10 @@ See `docs/transpilation_strategy.md` for complete strategy details.
 
 ## Important Considerations
 
-1. **Goja Limitations**: The engine supports ES5.1, not ES6+. Modern syntax requires transpilation.
-2. **Module System**: CommonJS-style, not ES6 modules (import/export).
-3. **Async Pattern**: Currently using callbacks; Promises/async-await planned for Phase 5.
-4. **WebSocket Focus**: Core design goal is supporting real-time WebSocket applications.
-5. **Plugin System**: Custom plugin architecture planned for framework extensibility.
-6. **Global-First Design**: Core APIs (file, http) are available globally without require() - a unique Dougless feature.
+1. **ES6+ Support**: Modern JavaScript syntax is now fully supported via esbuild transpilation.
+2. **Module System**: CommonJS-style, not ES6 modules (import/export) - ES modules planned for future.
+3. **Async Pattern**: ✅ Promises and async/await now fully supported!
+4. **Security Model**: Deno-inspired permission system for file, network, and environment access.
+5. **WebSocket Focus**: Core design goal is supporting real-time WebSocket applications.
+6. **Plugin System**: Custom plugin architecture planned for framework extensibility.
+7. **Global-First Design**: Core APIs (file, http, Promise) are available globally without require() - a unique Dougless feature.

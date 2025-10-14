@@ -163,10 +163,11 @@ While the core permissions system is complete, these enhancements will improve u
 ## Next Up: Phase 5 - Advanced Async & Promises
 
 ### Promises & Async/Await
-- ⏳ Promise constructor and basic Promise operations
-- ⏳ `Promise.resolve()` and `Promise.reject()`
-- ⏳ `Promise.all()`, `Promise.race()`, `Promise.allSettled()`
-- ⏳ async/await syntax support (requires transpilation)
+- ✅ Promise constructor and basic Promise operations
+- ✅ `Promise.resolve()` and `Promise.reject()`
+- ✅ `Promise.all()`, `Promise.race()` - fully implemented and tested!
+- ⏳ `Promise.allSettled()`, `Promise.any()`
+- ⏳ async/await syntax support (requires transpilation with esbuild)
 - ⏳ Promise-based versions of file operations
 - ⏳ Promise-based versions of HTTP operations
 - ⏳ Error handling improvements with try/catch
@@ -281,6 +282,256 @@ While the core permissions system is complete, these enhancements will improve u
 
 ---
 
+## Phase ∞: Become Dependency-Free (Long-term Vision)
+
+**Goal**: Build everything from scratch to maximize learning and understanding.
+
+This is a distant-future, aspirational phase focused on replacing all external dependencies with custom implementations. While we'll use libraries like Goja and esbuild in the short-term for pragmatic development, the ultimate learning goal is to understand these systems deeply enough to build them ourselves.
+
+### Custom JavaScript Engine
+**Replace**: Goja  
+**Why**: Deep understanding of JavaScript execution, memory management, and runtime internals
+
+#### Core Components
+- 🔬 **Lexer**: Tokenize JavaScript source code
+  - Character stream processing
+  - Token recognition (keywords, identifiers, operators, literals)
+  - Position tracking for error reporting
+  - Unicode support
+
+- 🔬 **Parser**: Build Abstract Syntax Tree (AST)
+  - Recursive descent parsing or Pratt parsing
+  - ES5.1 specification compliance initially
+  - Operator precedence handling
+  - Error recovery and reporting
+  - AST node types for all JavaScript constructs
+
+- 🔬 **Bytecode Compiler**: Transform AST to executable bytecode
+  - Instruction set design
+  - Register or stack-based VM architecture
+  - Optimization passes (constant folding, dead code elimination)
+  - Symbol table and scope management
+
+- 🔬 **Virtual Machine**: Execute bytecode
+  - Instruction dispatch loop
+  - Value representation (tagged pointers, NaN boxing, etc.)
+  - Memory management and garbage collection
+  - Call stack and exception handling
+  - Native function integration
+
+- 🔬 **Garbage Collector**: Automatic memory management
+  - Mark-and-sweep algorithm
+  - Generational collection for performance
+  - Incremental/concurrent collection
+  - Weak references and finalizers
+
+- 🔬 **Runtime Library**: Built-in JavaScript objects
+  - Object, Array, String, Number, Boolean
+  - Function, Date, RegExp, Error
+  - Math, JSON, console
+  - Prototype chain implementation
+
+**Learning Resources**:
+- "Crafting Interpreters" by Robert Nystrom
+- "Engineering a Compiler" by Cooper & Torczon
+- V8 design documentation
+- SpiderMonkey source code study
+
+---
+
+### Custom AST Transformer & Transpiler
+**Replace**: esbuild  
+**Why**: Master code transformation, understand compilation pipeline, enable custom optimizations
+
+#### Transpilation Pipeline
+- 🔬 **Parser**: ES2017+ to AST (can reuse from custom engine)
+- 🔬 **AST Visitors**: Pattern-based tree traversal
+  - Visitor pattern implementation
+  - Transform async/await → promises
+  - Transform arrow functions → regular functions
+  - Transform let/const → var with proper scoping
+  - Transform classes → constructor functions
+  - Transform template literals → string concatenation
+  - Transform destructuring → explicit assignments
+
+- 🔬 **Scope Analyzer**: Track variable bindings
+  - Lexical scope tracking
+  - Variable hoisting
+  - Closure detection
+  - Conflict resolution
+
+- 🔬 **Code Generator**: AST back to JavaScript
+  - ES5.1 compliant output
+  - Source map generation
+  - Readable output formatting
+  - Optimization opportunities
+
+- 🔬 **Optimization Passes**:
+  - Dead code elimination
+  - Constant propagation
+  - Function inlining
+  - Tail call optimization
+
+**Learning Resources**:
+- "Compilers: Principles, Techniques, and Tools" (Dragon Book)
+- Babel plugin development docs
+- AST Explorer for experimentation
+- esbuild source code analysis
+
+---
+
+### Custom WebSocket Implementation
+**Replace**: gorilla/websocket  
+**Why**: Understand network protocols, frame parsing, and real-time communication
+
+#### WebSocket Protocol
+- 🔬 **HTTP Upgrade Handling**:
+  - Parse upgrade headers
+  - Validate WebSocket handshake
+  - Generate Sec-WebSocket-Accept key
+  - Subprotocol negotiation
+
+- 🔬 **Frame Parser**:
+  - Bit-level frame structure parsing
+  - Opcode handling (text, binary, close, ping, pong)
+  - Masking/unmasking implementation
+  - Fragmented message reassembly
+  - Control frame handling
+
+- 🔬 **Connection Management**:
+  - Connection state machine (CONNECTING, OPEN, CLOSING, CLOSED)
+  - Ping/pong keep-alive
+  - Graceful close handshake
+  - Error handling and recovery
+
+- 🔬 **Message Queue**:
+  - Buffered send/receive
+  - Backpressure handling
+  - Priority queuing
+
+**Learning Resources**:
+- RFC 6455 (WebSocket Protocol)
+- "TCP/IP Illustrated" by W. Richard Stevens
+- Wireshark for protocol analysis
+- gorilla/websocket source code study
+
+---
+
+### Custom HTTP Client/Server
+**Replace**: net/http (Go standard library)  
+**Why**: Master HTTP protocol, connection handling, and server architecture
+
+#### HTTP Implementation
+- 🔬 **Request Parser**:
+  - HTTP/1.1 request line parsing
+  - Header parsing and validation
+  - Chunked transfer encoding
+  - Content-Length handling
+  - URL parsing and query string extraction
+
+- 🔬 **Response Builder**:
+  - Status line generation
+  - Header formatting
+  - Body encoding
+  - Chunked responses
+
+- 🔬 **Connection Management**:
+  - Keep-alive support
+  - Connection pooling
+  - Timeout handling
+  - Concurrent connection limits
+
+- 🔬 **TLS/SSL**:
+  - Certificate validation
+  - Encryption/decryption
+  - Handshake protocol
+  - Session resumption
+
+**Learning Resources**:
+- RFC 2616 (HTTP/1.1) and RFC 7540 (HTTP/2)
+- "HTTP: The Definitive Guide"
+- Go net/http source code
+- nginx architecture study
+
+---
+
+### Custom Event Loop
+**Replace**: Current event loop (keep but enhance)  
+**Why**: Understand async I/O, concurrency patterns, and scheduling
+
+#### Advanced Event Loop
+- 🔬 **I/O Multiplexing**:
+  - epoll/kqueue integration (platform-specific)
+  - Non-blocking I/O
+  - Edge-triggered vs level-triggered events
+
+- 🔬 **Task Scheduling**:
+  - Priority queues for task management
+  - Microtask vs macrotask distinction
+  - Fair scheduling algorithms
+  - CPU affinity for worker threads
+
+- 🔬 **Timer Management**:
+  - Efficient timer wheel or heap
+  - Microsecond precision
+  - Timer coalescing for efficiency
+
+**Learning Resources**:
+- libuv documentation and source
+- "The Art of Multiprocessor Programming"
+- Linux epoll/BSD kqueue man pages
+- Node.js event loop deep dive
+
+---
+
+### Development Approach
+
+**Phase 1: Study & Design** (Per Component)
+- 📚 Read specifications and RFCs
+- 📚 Study existing implementations
+- 📚 Design custom architecture
+- 📚 Create proof-of-concept prototypes
+
+**Phase 2: Implement & Test**
+- 🔨 Build minimal viable version
+- 🔨 Comprehensive unit tests
+- 🔨 Integration with existing runtime
+- 🔨 Performance benchmarking
+
+**Phase 3: Optimize & Refine**
+- ⚡ Profile and identify bottlenecks
+- ⚡ Optimize hot paths
+- ⚡ Memory usage improvements
+- ⚡ Documentation and examples
+
+**Phase 4: Production Hardening**
+- 🛡️ Edge case handling
+- 🛡️ Security auditing
+- 🛡️ Stress testing
+- 🛡️ Real-world validation
+
+---
+
+### Why This Matters
+
+**Learning Goals**:
+- 🎓 **Deep System Understanding**: Know how things work at the lowest level
+- 🎓 **Problem-Solving Skills**: Face and solve complex engineering challenges
+- 🎓 **Performance Intuition**: Understand why things are fast or slow
+- 🎓 **Debugging Mastery**: Fix issues in code you fully understand
+- 🎓 **Architecture Expertise**: Design large, complex systems from scratch
+
+**Practical Benefits**:
+- 🚀 **Custom Optimizations**: Optimize for specific use cases
+- 🚀 **No External Dependencies**: Complete control and no supply chain risks
+- 🚀 **Tailored Features**: Add exactly what Dougless needs
+- 🚀 **Educational Tool**: Serve as learning material for others
+- 🚀 **Zero Bloat**: Only include what's necessary
+
+**Timeline**: This is a multi-year journey, tackled one component at a time as learning projects. There's no rush - the goal is deep understanding, not quick completion.
+
+---
+
 ## Performance Targets
 
 ### Current Goals
@@ -309,4 +560,4 @@ While the core permissions system is complete, these enhancements will improve u
 
 ---
 
-*Last Updated: Phase 4 Complete - Permissions System Implemented*
+*Last Updated: Phase 5 In Progress - Promises (Promise.all/race) Complete + Long-term "Become Dependency-Free" Vision Added*
