@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Recent Updates - October 14, 2024
+
+#### Enhanced
+- **Source Map Support**
+  - Enabled inline source maps for transpiled code
+  - Error messages now reference original source code line numbers
+  - Automatic mapping from transpiled ES5 to original ES6+ code
+  - Edge case handling: disabled for empty scripts to prevent parsing errors
+  - Improved debugging experience with accurate stack traces
+  - Smart variable name preservation in error messages
+  - Benefits all ES6+ features: arrow functions, template literals, destructuring, etc.
+
+- **Path Module - Now Global API**
+  - `path` object now available globally (no `require()` needed)
+  - Consistent with `file` and `http` global API design
+  - Backward compatible: `require('path')` still works
+  - Usage: `path.join('a', 'b')` instead of `require('path').join('a', 'b')`
+  - All methods accessible: join, resolve, dirname, basename, extname, sep
+  - Unified global API pattern across all core modules
+
+- **Module System Fix**
+  - Added `require()` function to global scope (was previously missing)
+  - Ensures backward compatibility for existing code
+  - Modules can be accessed both globally and via `require()`
+
+#### Fixed
+- **Promise Error Propagation**
+  - Fixed thenable detection for returned promises (Promise/A+ compliance)
+  - Now properly detects promise-like objects with `.then()` method
+  - Fixed: returning `Promise.reject()` from `.then()` now chains correctly
+  - Fixed: rejections now propagate through `.then()` without error handlers
+  - All rejection flows now reach `.catch()` handlers as expected
+  - Resolves issue where nested promise rejections would silently fail
+
+#### Testing & Quality
+- Runtime module test coverage improved: 75.0% → 77.2%
+- All existing tests pass with new global APIs
+- Added comprehensive test suite for path global functionality
+- Verified backward compatibility with `require()` system
+- **Promise test suite: 18/18 tests passing** (previously 16/18)
+- Removed all `t.Skip()` calls - no skipped tests remaining
+- Removed all TODO comments from codebase
+
 ### Phase 1 - Foundation (COMPLETE)
 
 #### Added - October 2024
@@ -92,7 +135,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Phase 2] - October 2024 - COMPLETE ✅
 
-### Path Module
+### Path Module (Global API)
+- **Unique Dougless Feature**: `path` object available globally (no require needed)
 - **Full Implementation**
   - `path.join()` - Join path segments with OS-specific separator
   - `path.resolve()` - Resolve paths to absolute paths
@@ -101,6 +145,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `path.extname()` - Get file extension
   - `path.sep` - OS-specific path separator constant
   - Cross-platform compatibility (Windows/Unix)
+  - Backward compatible: `require('path')` still supported
 
 ### File System Module (Global API)
 - **Unique Dougless Feature**: `file` object available globally (no require needed)

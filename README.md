@@ -380,11 +380,10 @@ This project is in early development. Contributions, ideas, and feedback are wel
 ### Framework Goals
 - Serve as the foundation for a full-stack framework
 - Provide a custom plugin system for extending framework capabilities
-- Create a new paradigm for web development focused on real-time communication
-- Globals-first API design for simplicity and developer experience
 
 📋 **See [ROADMAP.md](ROADMAP.md) for detailed implementation status and future plans.**
 
 ---
 
 **Note**: This project is under active development. APIs and features are subject to change as we progress through the development phases.
+

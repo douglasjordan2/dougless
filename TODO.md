@@ -1,0 +1,144 @@
+# Dougless Runtime - TODO List
+
+Generated: 2025-10-14  
+Last Updated: 2025-10-14
+
+## ✅ Completed Tasks
+
+### 3. Clear TODOs from Code Comments ✅ (Oct 14, 2025)
+- [x] Enabled source maps in transpiler
+- [x] Fixed Promise error propagation
+- [x] **Result:** Zero TODO comments in code
+
+### 4. Remove t.Skip Calls ✅ (Oct 14, 2025)
+- [x] Fixed `TestPromiseErrorPropagation`
+- [x] Fixed `TestPromiseThenWithoutErrorHandler`
+- [x] **Result:** Zero skipped tests
+
+### 7. Clean LSP Errors ✅ (Oct 14, 2025)
+- [x] Verified with `go vet ./...` - clean
+- [x] **Result:** No LSP errors
+
+---
+
+## 🚧 Remaining Tasks
+
+## Project Cleanup & Improvement Tasks
+
+### 1. Add Missing Tests
+- [ ] Identify modules and functions without test coverage
+- [ ] Add comprehensive unit tests for:
+  - Runtime initialization
+  - Transpilation
+  - Module system
+  - Event loop edge cases
+  - Promise implementation
+  - File operations
+  - HTTP operations
+  - Permission system
+- [ ] Run `go test -cover ./...` to check coverage
+
+### 1.5. Complete Promise Implementation (MEDIUM PRIORITY)
+**Status:** Partially complete (2/4 methods implemented)  
+**Implemented:**
+- [x] `Promise.all()` - ✅ Working
+- [x] `Promise.race()` - ✅ Working
+
+**TODO:**
+- [ ] Implement `Promise.any()` static method in `internal/modules/promise.go`
+- [ ] Implement `Promise.allSettled()` static method in `internal/modules/promise.go`
+- [ ] Add tests for both new Promise methods
+- [ ] Update CHANGELOG.md to reflect actual status
+
+### 1.6. Unify file.read() and file.readdir()
+- [ ] Consider making `file.read()` smart enough to detect files vs directories
+- [ ] Options:
+  - Return consistent object structure: `{ type: 'file', content: '...' }` or `{ type: 'directory', entries: [...] }`
+  - Keep both methods but make one an alias
+  - Use `file.stat()` internally to determine the type
+- [ ] Ensure backward compatibility or document breaking changes
+- [ ] Update tests and examples if implemented
+
+### 2. Fix Issues from Current Tests (MAINTENANCE)
+- [x] All tests currently passing ✅
+- [ ] Monitor for future test failures during development
+
+### 3. Clear TODOs from Code Comments
+- [ ] Search for TODO comments: `grep -r "TODO" --include="*.go" .`
+- [ ] Resolve each TODO item by implementing the feature or removing if no longer relevant
+- [ ] Document decisions for removed TODOs
+
+### 4. Remove t.Skip Calls from Tests
+- [ ] Find all t.Skip() calls: `grep -r "t.Skip" --include="*_test.go" .`
+- [ ] Either implement the skipped tests or remove them if no longer needed
+- [ ] Document rationale for any that must remain skipped
+
+### 5. Analyze File Sizes and Folder Structure
+- [ ] Review codebase organization
+- [ ] Identify large files that could benefit from splitting (>500 lines)
+- [ ] Ensure logical separation of concerns
+- [ ] Consider refactoring into smaller, focused modules where appropriate
+- [ ] Check with: `find . -name "*.go" -type f -exec wc -l {} + | sort -rn | head -20`
+
+### 6. Ensure Package Documentation Comments are Complete
+- [ ] Review all packages and exported functions/types
+- [ ] Add missing godoc comments following Go conventions
+  - Comment should start with the name of the thing being documented
+  - Package comments should be in `doc.go` or above the package declaration
+- [ ] Ensure examples are provided where helpful
+- [ ] Verify with: `go doc -all`
+
+### 7. Clean LSP Errors
+- [ ] Run `go vet ./...` and check for warnings
+- [ ] Fix type issues
+- [ ] Remove unused variables
+- [ ] Correct incorrect imports
+- [ ] Address any other static analysis warnings
+- [ ] Run `go fmt ./...` to ensure formatting consistency
+
+### 8. Security Sweep of Codebase
+- [ ] Review code for security issues:
+  - Input validation
+  - Path traversal vulnerabilities
+  - Permission bypasses
+  - Unsafe operations
+  - Error information leakage
+- [ ] Ensure proper handling of user-supplied data throughout the codebase
+- [ ] Review permission system for edge cases
+- [ ] Check file operations for security issues
+- [ ] Verify network operations are properly secured
+
+## Quick Commands
+
+```bash
+# Run all tests
+go test ./...
+
+# Run tests with coverage
+go test -cover ./...
+
+# Find TODO comments
+grep -r "TODO" --include="*.go" .
+
+# Find t.Skip calls
+grep -r "t.Skip" --include="*_test.go" .
+
+# Check file sizes
+find . -name "*.go" -type f -exec wc -l {} + | sort -rn | head -20
+
+# Run go vet
+go vet ./...
+
+# Format code
+go fmt ./...
+
+# Check documentation
+go doc -all ./internal/runtime
+```
+
+## Notes
+
+- Maintain test coverage above 80%
+- Follow Go conventions and best practices
+- Document any architectural decisions
+- Keep security as a top priority

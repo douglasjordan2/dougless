@@ -88,12 +88,19 @@ func (rt *Runtime) Execute(source, filename string) error {
 }
 
 func (rt *Runtime) transpile(source, filename string) (string, error) {
+	// Use inline source maps for better debugging, but only when there's actual code
+	// Empty/whitespace-only scripts produce invalid source maps that Goja can't parse
+	sourcemap := api.SourceMapInline
+	if len(source) == 0 {
+		sourcemap = api.SourceMapNone
+	}
+
 	result := api.Transform(source, api.TransformOptions{
 		Loader:      api.LoaderJS,
 		Target:      api.ES2017,
 		Sourcefile:  filename,
 		Format:      api.FormatDefault,
-		Sourcemap:   api.SourceMapNone, // TODO: Enable source maps for better debugging
+		Sourcemap:   sourcemap,
 	})
 
 	if len(result.Errors) > 0 {
@@ -135,6 +142,10 @@ func (rt *Runtime) initializeGlobals() {
   rt.vm.Set("clearTimeout", timerObj.Get("clearTimeout"))
   rt.vm.Set("clearInterval", timerObj.Get("clearInterval"))
 
+  // Path
+  path := modules.NewPath()
+  rt.vm.Set("path", path.Export(rt.vm))
+
 	// File system
 	fileSystem := modules.NewFileSystem(rt.eventLoop)
 	rt.vm.Set("file", fileSystem.Export(rt.vm))
@@ -145,14 +156,14 @@ func (rt *Runtime) initializeGlobals() {
 
   // Promise
   modules.SetupPromise(rt.vm, rt.eventLoop)
+
+  // require() function for module loading
+  rt.vm.Set("require", rt.requireFunction)
 }
 
 // initializeModules registers built-in modules
 func (rt *Runtime) initializeModules() {
 	rt.modules.Register("path", modules.NewPath())
-	// TODO: Add more modules here (http, crypto, etc.)
-	
-	rt.vm.Set("require", rt.requireFunction)
 }
 
 func (rt *Runtime) requireFunction(call goja.FunctionCall) goja.Value {

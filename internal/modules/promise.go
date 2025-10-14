@@ -120,27 +120,35 @@ func (p *Promise) Then(onFulfilled, onRejected goja.Callable) *Promise {
     result, err := onFulfilled(goja.Undefined(), call.Argument(0))
     if err != nil {
       newPromise.reject(p.vm.ToValue(err.Error()))
-    } else {
-      if resultPromise, ok := result.Export().(*Promise); ok {
-        // Chain the promises
-        resolveFn := func(call goja.FunctionCall) goja.Value {
-          newPromise.resolve(call.Argument(0))
-          return goja.Undefined()
+      return goja.Undefined()
+    }
+    
+    // Check if result is a thenable (has a .then method)
+    if result != nil && !goja.IsUndefined(result) && !goja.IsNull(result) {
+      resultObj := result.ToObject(p.vm)
+      if resultObj != nil {
+        thenMethod := resultObj.Get("then")
+        if thenMethod != nil && !goja.IsUndefined(thenMethod) && !goja.IsNull(thenMethod) {
+          if thenFunc, ok := goja.AssertFunction(thenMethod); ok {
+            // It's thenable - chain it
+            resolveFn := func(call goja.FunctionCall) goja.Value {
+              newPromise.resolve(call.Argument(0))
+              return goja.Undefined()
+            }
+            rejectFn := func(call goja.FunctionCall) goja.Value {
+              newPromise.reject(call.Argument(0))
+              return goja.Undefined()
+            }
+            
+            thenFunc(result, p.vm.ToValue(resolveFn), p.vm.ToValue(rejectFn))
+            return goja.Undefined()
+          }
         }
-        rejectFn := func(call goja.FunctionCall) goja.Value {
-          newPromise.reject(call.Argument(0))
-          return goja.Undefined()
-        }
-        
-        resolveCallable, _ := goja.AssertFunction(p.vm.ToValue(resolveFn))
-        rejectCallable, _ := goja.AssertFunction(p.vm.ToValue(rejectFn))
-        
-        resultPromise.Then(resolveCallable, rejectCallable)
-      } else {
-        newPromise.resolve(result)
       }
     }
-
+    
+    // Not a promise, just resolve with value
+    newPromise.resolve(result)
     return goja.Undefined()
   }
 
@@ -172,23 +180,21 @@ func (p *Promise) Then(onFulfilled, onRejected goja.Callable) *Promise {
     wrappedRejected, _ := goja.AssertFunction(p.vm.ToValue(rejectedWrapper))
     p.onRejected = append(p.onRejected, wrappedRejected)
   } else if p.state == PromiseFulfilled {
-    if onFulfilled != nil {
-      val := p.value
-      p.eventLoop.ScheduleTask(&event.Task{
-        Callback: func() {
-          fulfilledWrapper(goja.FunctionCall{Arguments: []goja.Value{val}})
-        },
-      })
-    }
+    // Always propagate value (fulfilledWrapper handles nil handler)
+    val := p.value
+    p.eventLoop.ScheduleTask(&event.Task{
+      Callback: func() {
+        fulfilledWrapper(goja.FunctionCall{Arguments: []goja.Value{val}})
+      },
+    })
   } else if p.state == PromiseRejected {
-    if onRejected != nil {
-      rsn := p.reason
-      p.eventLoop.ScheduleTask(&event.Task{
-        Callback: func() {
-          rejectedWrapper(goja.FunctionCall{Arguments: []goja.Value{rsn}})
-        },
-      })
-    }
+    // Always propagate rejection (rejectedWrapper handles nil handler)
+    rsn := p.reason
+    p.eventLoop.ScheduleTask(&event.Task{
+      Callback: func() {
+        rejectedWrapper(goja.FunctionCall{Arguments: []goja.Value{rsn}})
+      },
+    })
   }
 
   return newPromise

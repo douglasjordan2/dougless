@@ -470,7 +470,6 @@ func TestPromiseRaceWithNonPromiseValue(t *testing.T) {
 }
 
 func TestPromiseErrorPropagation(t *testing.T) {
-	t.Skip("TODO: Promise chaining with nested Promise.reject() needs work")
 	vm, loop := setupTestEnvironment()
 	defer loop.Stop()
 	
@@ -504,7 +503,6 @@ func TestPromiseErrorPropagation(t *testing.T) {
 }
 
 func TestPromiseThenWithoutErrorHandler(t *testing.T) {
-	t.Skip("TODO: Error propagation through .then() without handler needs work")
 	vm, loop := setupTestEnvironment()
 	defer loop.Stop()
 	
