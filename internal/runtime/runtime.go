@@ -24,6 +24,7 @@ import (
   "sync"
 
 	"github.com/dop251/goja"
+  "github.com/evanw/esbuild/pkg/api"
 
 	"github.com/douglasjordan2/dougless/internal/event"
 	"github.com/douglasjordan2/dougless/internal/modules"
@@ -38,7 +39,6 @@ type Runtime struct {
   timersMu     sync.Mutex
 }
 
-// New creates a new runtime instance
 func New() *Runtime {
 	vm := goja.New()
 	eventLoop := event.NewLoop()
@@ -51,14 +51,12 @@ func New() *Runtime {
     timers:    make(map[string]time.Time),
 	}
 
-	// Initialize built-in modules and globals
 	rt.initializeGlobals()
 	rt.initializeModules()
 
 	return rt
 }
 
-// ExecuteFile executes a JavaScript file
 func (rt *Runtime) ExecuteFile(filename string) error {
 	source, err := os.ReadFile(filename)
 	if err != nil {
@@ -74,16 +72,53 @@ func (rt *Runtime) Execute(source, filename string) error {
 	go rt.eventLoop.Run()
 	defer rt.eventLoop.Stop()
 
-	// Execute the script
-	_, err := rt.vm.RunScript(filename, source)
+	transpiledCode, err := rt.transpile(source, filename)
+	if err != nil {
+		return fmt.Errorf("transpilation error: %w", err)
+	}
+
+	_, err = rt.vm.RunScript(filename, transpiledCode)
 	if err != nil {
 		return fmt.Errorf("execution error: %w", err)
 	}
 
-	// Wait for all async operations to complete
 	rt.eventLoop.Wait()
 
 	return nil
+}
+
+func (rt *Runtime) transpile(source, filename string) (string, error) {
+	result := api.Transform(source, api.TransformOptions{
+		Loader:      api.LoaderJS,
+		Target:      api.ES2017,
+		Sourcefile:  filename,
+		Format:      api.FormatDefault,
+		Sourcemap:   api.SourceMapNone, // TODO: Enable source maps for better debugging
+	})
+
+	if len(result.Errors) > 0 {
+		// Return the first error with details
+		err := result.Errors[0]
+		return "", fmt.Errorf("%s:%d:%d: %s", 
+			err.Location.File,
+			err.Location.Line,
+			err.Location.Column,
+			err.Text,
+		)
+	}
+
+	if len(result.Warnings) > 0 {
+		for _, warning := range result.Warnings {
+			fmt.Fprintf(os.Stderr, "Warning: %s:%d:%d: %s\n",
+				warning.Location.File,
+				warning.Location.Line,
+				warning.Location.Column,
+				warning.Text,
+			)
+		}
+	}
+
+	return string(result.Code), nil
 }
 
 // initializeGlobals sets up global objects and functions
@@ -107,19 +142,19 @@ func (rt *Runtime) initializeGlobals() {
   // HTTP
   httpClient := modules.NewHTTP(rt.eventLoop)
   rt.vm.Set("http", httpClient.Export(rt.vm))
+
+  // Promise
+  modules.SetupPromise(rt.vm, rt.eventLoop)
 }
 
 // initializeModules registers built-in modules
 func (rt *Runtime) initializeModules() {
-	// Register built-in modules (for require() support)
 	rt.modules.Register("path", modules.NewPath())
 	// TODO: Add more modules here (http, crypto, etc.)
 	
-	// Set up require function
 	rt.vm.Set("require", rt.requireFunction)
 }
 
-// requireFunction implements the require() function for modules
 func (rt *Runtime) requireFunction(call goja.FunctionCall) goja.Value {
 	if len(call.Arguments) == 0 {
 		panic(rt.vm.NewTypeError("require() missing module name"))
