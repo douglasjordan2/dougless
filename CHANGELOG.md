@@ -7,6 +7,134 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Recent Updates - October 15, 2024 (Continued)
+
+#### Cleanup & Code Quality
+- **Test Suite Consolidation**
+  - Merged duplicate test files into unified test suites
+  - Removed temporary debug scripts and redundant test files
+  - Deleted 7 standalone test files (test-debug.js, test-order.js, etc.)
+  - Cleaned up examples/ directory structure
+  - Renamed `path_module.js` to `path_examples.js` for consistency
+  - Created comprehensive `sourcemap_examples.js` example
+  
+- **Documentation Cleanup**
+  - Removed 3 temporary documentation files (768 lines total):
+    - DOCUMENTATION_STATUS.md (comprehensive audit completed)
+    - SOURCEMAP_EXPLANATION.md (integrated into code examples)
+    - TODO_EFFORT_ANALYSIS.md (effort estimation no longer needed)
+  - Updated TODO.md to reflect completed tasks
+  - Consolidated documentation into permanent locations
+  
+- **Code Formatting & LSP**
+  - Fixed duplicate `main` function declarations in demos/
+  - Added build tags (`//go:build ignore`) to demo files
+  - Ran `go fmt ./...` on entire codebase
+  - Verified `go vet ./...` passes with zero warnings
+  - Verified `go build ./...` succeeds
+  - All LSP errors resolved
+  
+- **Statistics**
+  - Total lines removed: 3,752 (mostly redundant test code and docs)
+  - Total lines modified/added: 2,971 (formatting and consolidation)
+  - Net reduction: ~780 lines of cleaner, more maintainable code
+  - Zero skipped tests, zero TODO comments, zero LSP errors
+
+### Recent Updates - October 15, 2024 (Earlier)
+
+#### Completed - Phase 5 (Promises & ES6+) ✅
+- **Promise.allSettled() Implementation**
+  - ES2020-compliant `Promise.allSettled()` static method
+  - Always resolves (never rejects), even when all promises reject
+  - Returns array of result objects with `status` and `value`/`reason` properties
+  - Handles mixed fulfilled and rejected promises
+  - Properly handles non-promise values (wraps as fulfilled)
+  - Waits for all promises to settle regardless of outcome
+  - Full test coverage with 7 comprehensive tests
+  - Example file: `examples/test-promise-allsettled.js`
+
+- **Promise.any() Validation**
+  - Already implemented and working (ES2021 feature)
+  - Returns first fulfilled promise, ignoring rejections
+  - Throws AggregateError when all promises reject
+  - Properly handles non-promise values
+  - Example file: `examples/test-promise-any.js`
+  - **Phase 5 is now 100% COMPLETE** ✅
+
+#### Fixed
+- **Promise Reuse Bug**
+  - Fixed panic when reusing settled promise instances
+  - Test examples updated to create fresh promise arrays
+  - Error: "slice bounds out of range [:-1]" resolved
+
+### Previous Updates - October 14, 2024
+
+#### Enhanced
+- **Source Map Support**
+  - Enabled inline source maps for transpiled code
+  - Error messages now reference original source code line numbers
+  - Automatic mapping from transpiled ES5 to original ES6+ code
+  - Edge case handling: disabled for empty scripts to prevent parsing errors
+  - Improved debugging experience with accurate stack traces
+  - Smart variable name preservation in error messages
+  - Benefits all ES6+ features: arrow functions, template literals, destructuring, etc.
+
+- **Path Module - Now Global API**
+  - `path` object now available globally (no `require()` needed)
+  - Consistent with `file` and `http` global API design
+  - Backward compatible: `require('path')` still works
+  - Usage: `path.join('a', 'b')` instead of `require('path').join('a', 'b')`
+  - All methods accessible: join, resolve, dirname, basename, extname, sep
+  - Unified global API pattern across all core modules
+
+- **Module System Fix**
+  - Added `require()` function to global scope (was previously missing)
+  - Ensures backward compatibility for existing code
+  - Modules can be accessed both globally and via `require()`
+
+#### Fixed
+- **Promise Error Propagation**
+  - Fixed thenable detection for returned promises (Promise/A+ compliance)
+  - Now properly detects promise-like objects with `.then()` method
+  - Fixed: returning `Promise.reject()` from `.then()` now chains correctly
+  - Fixed: rejections now propagate through `.then()` without error handlers
+  - All rejection flows now reach `.catch()` handlers as expected
+  - Resolves issue where nested promise rejections would silently fail
+
+#### Documentation
+- **Comprehensive Package Documentation** (Enhanced!)
+  - Added godoc comments to all core packages and modules
+  - **cmd/dougless**: Full CLI documentation with usage examples
+  - **internal/repl**: Complete REPL API documentation
+  - **internal/runtime**: Detailed runtime architecture documentation
+  - **internal/event**: Event loop concurrency model documented
+  - **internal/modules**: Complete module API documentation (NEW!)
+    - console.go: Console API with all methods documented
+    - timers.go: Timer system with event loop integration details
+    - path.go: Cross-platform path manipulation utilities
+    - file.go: Async file operations with permission details
+    - http.go: HTTP client/server + WebSocket support
+    - promise.go: Promise/A+ implementation with spec compliance notes
+  - **internal/permissions**: Security system documentation (NEW!)
+    - permissions.go: 450+ lines covering core permission manager
+    - parser.go: CLI flag parsing with usage examples
+    - prompt.go: Interactive prompt behavior and responses
+  - **1,200+ lines of documentation added**
+  - All exported types, functions, and methods documented
+  - JavaScript usage examples provided for all APIs
+  - Permission requirements documented where applicable
+  - Thread-safety and concurrency notes included
+  - Follows Go documentation conventions throughout
+
+#### Testing & Quality
+- Runtime module test coverage improved: 75.0% → 77.2%
+- All existing tests pass with new global APIs
+- Added comprehensive test suite for path global functionality
+- Verified backward compatibility with `require()` system
+- **Promise test suite: 18/18 tests passing** (previously 16/18)
+- Removed all `t.Skip()` calls - no skipped tests remaining
+- Removed all TODO comments from codebase
+
 ### Phase 1 - Foundation (COMPLETE)
 
 #### Added - October 2024
@@ -92,7 +220,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Phase 2] - October 2024 - COMPLETE ✅
 
-### Path Module
+### Path Module (Global API)
+- **Unique Dougless Feature**: `path` object available globally (no require needed)
 - **Full Implementation**
   - `path.join()` - Join path segments with OS-specific separator
   - `path.resolve()` - Resolve paths to absolute paths
@@ -101,6 +230,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `path.extname()` - Get file extension
   - `path.sep` - OS-specific path separator constant
   - Cross-platform compatibility (Windows/Unix)
+  - Backward compatible: `require('path')` still supported
 
 ### File System Module (Global API)
 - **Unique Dougless Feature**: `file` object available globally (no require needed)

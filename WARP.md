@@ -163,11 +163,15 @@ Tasks can be scheduled with delays (timers) or executed immediately. The loop co
 
 ## Development Status
 
-**Phase 1 (Foundation) - COMPLETE ✅**
+**Phases 1-6 Status:**
+- ✅ Phase 1: Foundation - COMPLETE
+- ✅ Phase 2: File System & Modules - COMPLETE  
+- ✅ Phase 3: Networking & HTTP - COMPLETE
+- ✅ Phase 4: Security & Permissions - COMPLETE
+- ✅ Phase 5: Promises & ES6+ - **COMPLETE** (Oct 15, 2024)
+- ✅ Phase 6: WebSockets & Real-time - COMPLETE
 
-All Phase 1 objectives have been successfully implemented:
-
-### Completed ✅
+### Phase 1 (Foundation) - COMPLETE ✅
 - ✅ Basic project structure and Go module setup
 - ✅ Goja JavaScript engine integration
 - ✅ Event loop with async operation handling
@@ -206,12 +210,20 @@ All Phase 1 objectives have been successfully implemented:
 - ✅ Event loop integration for async HTTP operations
 
 ### Phase 4 (Security & Permissions) - COMPLETE ✅
-- ✅ Deno-inspired permission system
-- ✅ CLI flags for permission grants (--allow-read, --allow-write, --allow-net, etc.)
+- ✅ Initial permission system implementation
+- ✅ CLI flags for permission grants (--allow-read, --allow-write, --allow-net, etc.) **[DEPRECATED]**
 - ✅ Interactive permission prompts in terminal mode
 - ✅ Path-based and network-based granular controls
 - ✅ Permission caching and session management
 - ✅ Clear error messages with actionable suggestions
+
+**Planned Evolution**: The CLI flag-based approach will be deprecated in favor of a config-first model:
+- **Production**: Permissions defined exclusively in `.douglessrc` or `.douglessrc.json`
+- **Development**: Two-step interactive prompt flow:
+  1. First prompt: `Allow [operation]? yes/no` - grants permission for current session
+  2. If 'yes': `Add to .douglessrc? yes/no` - optionally persists to config file
+  3. This allows developers to build their `.douglessrc` incrementally during development
+- **Goal**: Distinguish Dougless from Deno with a cleaner, more project-centric permission model
 
 ### Phase 5 (Promises & ES6+) - COMPLETE ✅
 - ✅ Full Promise/A+ implementation
@@ -227,10 +239,26 @@ All Phase 1 objectives have been successfully implemented:
 - ✅ Event loop integration for promise resolution
 - ✅ Thread-safe promise state management
 
-### Currently Starting: Phase 6 (WebSockets & Real-time)
-- WebSocket client and server
-- Real-time bidirectional communication
-- Connection management
+### Phase 6 (WebSockets & Real-time) - COMPLETE ✅
+- ✅ WebSocket server integration (`server.websocket(path, callbacks)`)
+- ✅ Real-time bidirectional communication
+- ✅ Connection state management (readyState: CONNECTING, OPEN, CLOSING, CLOSED)
+- ✅ Event callbacks: open, message, close, error
+- ✅ Thread-safe message sending with mutex protection
+- ✅ Broadcasting to multiple clients
+- ✅ Working examples: websocket_simple.js, websocket_server.js, websocket_chat.js
+
+### Phase 5 Complete! ✅ (October 15, 2024)
+**Status:** ALL features implemented and tested
+- ✅ Promise constructor and basic operations
+- ✅ Promise.resolve() and Promise.reject()
+- ✅ Promise.all() - fully implemented and tested
+- ✅ Promise.race() - fully implemented and tested
+- ✅ Promise.allSettled() - **NEWLY IMPLEMENTED** (Oct 15, 2024)
+- ✅ Promise.any() - fully implemented and tested
+- ✅ ES6+ transpilation with esbuild
+- ✅ Full test coverage for all Promise methods
+- ✅ Example files demonstrating all features
 
 ## Key Implementation Files
 
@@ -267,14 +295,14 @@ All Phase 1 objectives have been successfully implemented:
 
 ## Future Development Phases
 
-The project follows an 8-phase development plan:
+The project follows a multi-phase development plan:
 1. Foundation ✅
 2. File System & Modules ✅
 3. Networking & HTTP ✅
 4. Security & Permissions ✅
-5. Promises & ES6+ ✅
-6. WebSockets & Real-time (Current)
-7. Crypto & Security
+5. Promises & ES6+ ✅ (COMPLETE - Oct 15, 2024)
+6. WebSockets & Real-time ✅
+7. Crypto & Security (Next)
 8. Process & System Integration
 9. Performance & Optimization
 
@@ -320,7 +348,7 @@ See `docs/transpilation_strategy.md` for complete strategy details and `internal
 1. **ES6+ Support**: Modern JavaScript syntax is now fully supported via esbuild transpilation.
 2. **Module System**: CommonJS-style, not ES6 modules (import/export) - ES modules planned for future.
 3. **Async Pattern**: ✅ Promises and async/await now fully supported!
-4. **Security Model**: Deno-inspired permission system for file, network, and environment access.
+4. **Security Model**: Config-first permission system using `.douglessrc`/`.douglessrc.json`. Development mode uses two-step prompts (yes/no → add to config?) to build permissions incrementally. CLI flags are deprecated.
 5. **WebSocket Focus**: Core design goal is supporting real-time WebSocket applications.
 6. **Plugin System**: Custom plugin architecture planned for framework extensibility.
 7. **Global-First Design**: Core APIs (file, http, Promise) are available globally without require() - a unique Dougless feature.

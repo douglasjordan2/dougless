@@ -20,17 +20,38 @@ import (
 	"github.com/douglasjordan2/dougless/internal/permissions"
 )
 
+// HTTP provides HTTP client and server functionality for JavaScript.
+// Includes support for GET/POST requests, server creation with WebSocket upgrade capability,
+// and comprehensive request/response handling. All operations integrate with the event loop
+// for non-blocking execution and require network permissions.
+//
+// Available globally in JavaScript as the 'http' object (unique to Dougless).
+//
+// Example usage:
+//
+//	// HTTP Client
+//	http.get('https://api.example.com/data', (err, response) => {
+//	  console.log(response.body);
+//	});
+//
+//	// HTTP Server
+//	const server = http.createServer((req, res) => {
+//	  res.end('Hello World');
+//	});
+//	server.listen(3000);
 type HTTP struct {
-	vm        *goja.Runtime
-	eventLoop *event.Loop
+	vm        *goja.Runtime // JavaScript runtime instance
+	eventLoop *event.Loop   // Event loop for async task scheduling
 }
 
+// NewHTTP creates a new HTTP instance with the given event loop.
 func NewHTTP(eventLoop *event.Loop) *HTTP {
 	return &HTTP{
 		eventLoop: eventLoop,
 	}
 }
 
+// Export creates and returns the HTTP JavaScript object with all HTTP methods.
 func (http *HTTP) Export(vm *goja.Runtime) goja.Value {
 	http.vm = vm
 	obj := vm.NewObject()
@@ -42,6 +63,8 @@ func (http *HTTP) Export(vm *goja.Runtime) goja.Value {
 	return obj
 }
 
+// extractHost extracts the hostname from a URL string for permission checks.
+// Removes http:// or https:// prefix and returns everything before the first /.
 func (http *HTTP) extractHost(urlStr string) string {
 	urlStr = strings.TrimPrefix(urlStr, "http://")
 	urlStr = strings.TrimPrefix(urlStr, "https://")
@@ -50,6 +73,32 @@ func (http *HTTP) extractHost(urlStr string) string {
 	return parts[0]
 }
 
+// get performs an HTTP GET request asynchronously.
+// The operation is scheduled on the event loop and requires network permission for the target host.
+//
+// Parameters:
+//   - url (string): The URL to fetch
+//   - callback (function): Called with (thisArg, error, response) after completion
+//
+// The response object contains:
+//   - status (string): HTTP status text (e.g., "200 OK")
+//   - statusCode (number): HTTP status code (e.g., 200)
+//   - body (string): Response body as a string
+//   - headers (object): Response headers (single values as strings, multiple as arrays)
+//
+// If permission is denied or an error occurs, the callback receives an error message
+// and the response is undefined. On success, error is null.
+//
+// Example:
+//
+//	http.get('https://api.github.com/users/octocat', function(thisArg, err, resp) {
+//	  if (err) {
+//	    console.error('Request failed:', err);
+//	  } else {
+//	    console.log('Status:', resp.statusCode);
+//	    console.log('Body:', resp.body);
+//	  }
+//	});
 func (http *HTTP) get(call goja.FunctionCall) goja.Value {
 	if len(call.Arguments) < 2 {
 		panic(http.vm.ToValue("GET requires a URL and a callback"))
@@ -116,6 +165,32 @@ func (http *HTTP) get(call goja.FunctionCall) goja.Value {
 	return goja.Undefined()
 }
 
+// post performs an HTTP POST request asynchronously with a JSON payload.
+// The operation is scheduled on the event loop and requires network permission for the target host.
+//
+// Parameters:
+//   - url (string): The URL to post to
+//   - payload (object): Data to send (automatically JSON-encoded)
+//   - callback (function): Called with (thisArg, error, response) after completion
+//
+// The payload can include a special 'contentType' property to override the default
+// 'application/json' content type. This property is removed before encoding.
+//
+// The response object contains:
+//   - status (string): HTTP status text
+//   - statusCode (number): HTTP status code
+//   - body (string): Response body as a string
+//   - headers (object): Response headers
+//
+// Example:
+//
+//	http.post('https://api.example.com/data', {name: 'Alice', age: 30}, function(thisArg, err, resp) {
+//	  if (err) {
+//	    console.error('POST failed:', err);
+//	  } else {
+//	    console.log('Response:', resp.body);
+//	  }
+//	});
 func (http *HTTP) post(call goja.FunctionCall) goja.Value {
 	if len(call.Arguments) < 3 {
 		panic(http.vm.ToValue("POST requires a URL, payload, and a callback"))
@@ -201,6 +276,9 @@ func (http *HTTP) post(call goja.FunctionCall) goja.Value {
 	return goja.Undefined()
 }
 
+// createRequestObject converts a Go HTTP request into a JavaScript request object.
+// The object includes method, url, body, and headers properties.
+// Used internally by the HTTP server to provide request data to JavaScript handlers.
 func (http *HTTP) createRequestObject(r *netHttp.Request) goja.Value {
 	reqObj := http.vm.NewObject()
 
@@ -229,6 +307,36 @@ func (http *HTTP) createRequestObject(r *netHttp.Request) goja.Value {
 	return reqObj
 }
 
+// createServer creates an HTTP server with the given request handler.
+// The server supports standard HTTP requests and WebSocket upgrades.
+// Returns a server object with listen(), close(), and websocket() methods.
+//
+// Parameters:
+//   - handler (function): Called with (thisArg, request, response) for each HTTP request
+//
+// The request object contains:
+//   - method (string): HTTP method (GET, POST, etc.)
+//   - url (string): Request URL
+//   - body (string): Request body
+//   - headers (object): Request headers
+//
+// The response object has methods:
+//   - setHeader(name, value): Set a response header
+//   - end(data): Send the response with optional data
+//   - statusCode (property): Set HTTP status code (default 200)
+//
+// The returned server object has methods:
+//   - listen(port [, host] [, callback]): Start listening on the specified port
+//   - close(): Stop the server and release resources
+//   - websocket(path, callbacks): Add WebSocket endpoint (see websocket documentation)
+//
+// Example:
+//
+//	const server = http.createServer((req, res) => {
+//	  res.setHeader('Content-Type', 'text/plain');
+//	  res.end('Hello from Dougless!');
+//	});
+//	server.listen(8080, () => console.log('Server running on port 8080'));
 func (http *HTTP) createServer(call goja.FunctionCall) goja.Value {
 	if len(call.Arguments) < 1 {
 		panic(http.vm.ToValue("createServer requires a request handler function"))
