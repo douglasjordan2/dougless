@@ -163,11 +163,15 @@ Tasks can be scheduled with delays (timers) or executed immediately. The loop co
 
 ## Development Status
 
-**Phase 1 (Foundation) - COMPLETE ✅**
+**Phases 1-6 Status:**
+- ✅ Phase 1: Foundation - COMPLETE
+- ✅ Phase 2: File System & Modules - COMPLETE  
+- ✅ Phase 3: Networking & HTTP - COMPLETE
+- ✅ Phase 4: Security & Permissions - COMPLETE
+- ⏳ Phase 5: Promises & ES6+ - **PARTIAL** (Promise.any/allSettled TODO)
+- ✅ Phase 6: WebSockets & Real-time - COMPLETE
 
-All Phase 1 objectives have been successfully implemented:
-
-### Completed ✅
+### Phase 1 (Foundation) - COMPLETE ✅
 - ✅ Basic project structure and Go module setup
 - ✅ Goja JavaScript engine integration
 - ✅ Event loop with async operation handling
@@ -235,10 +239,23 @@ All Phase 1 objectives have been successfully implemented:
 - ✅ Event loop integration for promise resolution
 - ✅ Thread-safe promise state management
 
-### Currently Starting: Phase 6 (WebSockets & Real-time)
-- WebSocket client and server
-- Real-time bidirectional communication
-- Connection management
+### Phase 6 (WebSockets & Real-time) - COMPLETE ✅
+- ✅ WebSocket server integration (`server.websocket(path, callbacks)`)
+- ✅ Real-time bidirectional communication
+- ✅ Connection state management (readyState: CONNECTING, OPEN, CLOSING, CLOSED)
+- ✅ Event callbacks: open, message, close, error
+- ✅ Thread-safe message sending with mutex protection
+- ✅ Broadcasting to multiple clients
+- ✅ Working examples: websocket_simple.js, websocket_server.js, websocket_chat.js
+
+### Currently Working: Phase 5 Completion (Promises)
+**Status:** Partial implementation
+- ✅ Promise constructor and basic operations
+- ✅ Promise.resolve() and Promise.reject()
+- ✅ Promise.all() - fully implemented and tested
+- ✅ Promise.race() - fully implemented and tested
+- ⏳ **TODO:** Promise.allSettled() - mentioned in docs but NOT implemented
+- ⏳ **TODO:** Promise.any() - mentioned in docs but NOT implemented
 
 ## Key Implementation Files
 
@@ -275,14 +292,14 @@ All Phase 1 objectives have been successfully implemented:
 
 ## Future Development Phases
 
-The project follows an 8-phase development plan:
+The project follows a multi-phase development plan:
 1. Foundation ✅
 2. File System & Modules ✅
 3. Networking & HTTP ✅
 4. Security & Permissions ✅
-5. Promises & ES6+ ✅
-6. WebSockets & Real-time (Current)
-7. Crypto & Security
+5. Promises & ES6+ ⏳ (Partial - see Task 1.5 in TODO.md)
+6. WebSockets & Real-time ✅
+7. Crypto & Security (Next)
 8. Process & System Integration
 9. Performance & Optimization
 

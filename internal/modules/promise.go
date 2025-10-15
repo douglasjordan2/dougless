@@ -2,6 +2,7 @@ package modules
 
 import (
   "sync"
+  "strconv"
 
   "github.com/dop251/goja"
 
@@ -227,7 +228,8 @@ func (p *Promise) Then(onFulfilled, onRejected goja.Callable) *Promise {
   p.mu.Lock()
   defer p.mu.Unlock()
 
-  if p.state == PromisePending {
+  switch p.state {
+  case PromisePending:
     // Always attach fulfilledWrapper to propagate resolution through the chain
     wrappedFulfilled, _ := goja.AssertFunction(p.vm.ToValue(fulfilledWrapper))
     p.onFulfilled = append(p.onFulfilled, wrappedFulfilled)
@@ -235,7 +237,7 @@ func (p *Promise) Then(onFulfilled, onRejected goja.Callable) *Promise {
     // Always attach rejectedWrapper to propagate rejection through the chain
     wrappedRejected, _ := goja.AssertFunction(p.vm.ToValue(rejectedWrapper))
     p.onRejected = append(p.onRejected, wrappedRejected)
-  } else if p.state == PromiseFulfilled {
+  case PromiseFulfilled:
     // Always propagate value (fulfilledWrapper handles nil handler)
     val := p.value
     p.eventLoop.ScheduleTask(&event.Task{
@@ -243,7 +245,7 @@ func (p *Promise) Then(onFulfilled, onRejected goja.Callable) *Promise {
         fulfilledWrapper(goja.FunctionCall{Arguments: []goja.Value{val}})
       },
     })
-  } else if p.state == PromiseRejected {
+  case PromiseRejected:
     // Always propagate rejection (rejectedWrapper handles nil handler)
     rsn := p.reason
     p.eventLoop.ScheduleTask(&event.Task{
@@ -404,7 +406,7 @@ func SetupPromise(vm *goja.Runtime, eventLoop *event.Loop) {
         vm:        vm,
         eventLoop: eventLoop,
         state:     PromiseFulfilled,
-        value:     vm.ToValue([]interface{}{}),
+        value:     vm.ToValue([]any{}),
       }
       return createPromiseObject(emptyPromise)
     }
@@ -424,7 +426,7 @@ func SetupPromise(vm *goja.Runtime, eventLoop *event.Loop) {
 
     for i := 0; i < length; i++ {
       index := i // capture for closure
-      promiseVal := promisesObj.Get(string(rune('0' + i)))
+      promiseVal := promisesObj.Get(strconv.Itoa(i))
 
       if promiseVal.ExportType() == nil || promiseVal.ToObject(vm).Get("then") == nil {
         // not a promise, treat as resolved value
@@ -514,7 +516,7 @@ func SetupPromise(vm *goja.Runtime, eventLoop *event.Loop) {
     // Iterate in reverse order so first promise wins when multiple are already resolved
     // (due to goroutine scheduling, last-scheduled task often executes first)
     for i := length - 1; i >= 0; i-- {
-      promiseVal := promisesObj.Get(string(rune('0' + i)))
+      promiseVal := promisesObj.Get(strconv.Itoa(i))
 
       if promiseVal.ExportType() == nil || promiseVal.ToObject(vm).Get("then") == nil {
         // not a promise, treat as resolved. race is won immediately
@@ -560,6 +562,205 @@ func SetupPromise(vm *goja.Runtime, eventLoop *event.Loop) {
     }
 
     return createPromiseObject(racePromise)
+  })
+
+  promiseFuncObj.Set("any", func(call goja.FunctionCall) goja.Value {
+    promisesArg := call.Argument(0)
+
+    if promisesArg.ExportType() == nil {
+      panic(vm.NewTypeError("Promise.any requires an iterable"))
+    }
+
+    promisesObj := promisesArg.ToObject(vm)
+    lengthVal := promisesObj.Get("length")
+    if lengthVal == nil {
+      panic(vm.NewTypeError("Promise.any requires an array"))
+    }
+
+    length := int(lengthVal.ToInteger())
+
+    anyPromise := &Promise{
+      vm:          vm,
+      eventLoop:   eventLoop,
+      state:       PromisePending,
+      onFulfilled: []goja.Callable{},
+      onRejected:  []goja.Callable{},
+    }
+
+    if length == 0 {
+      aggregateError := vm.NewObject()
+      aggregateError.Set("name", "AggregateError")
+      aggregateError.Set("message", "All promises were rejected")
+      aggregateError.Set("errors", vm.ToValue([]goja.Value{}))
+      anyPromise.reject(aggregateError)
+      return createPromiseObject(anyPromise)
+    }
+
+    errors := make([]goja.Value, length)
+    var mu sync.Mutex
+    var settled = false
+    var remaining = length
+
+    for i := 0; i < length; i++ {
+      index := i // closure stuff again
+      promiseVal := promisesObj.Get(strconv.Itoa(i))
+
+      if promiseVal.ExportType() == nil || promiseVal.ToObject(vm).Get("then") == nil {
+        // not a promise, return immediately
+        mu.Lock()
+        anyPromise.resolve(promiseVal)
+        mu.Unlock()
+
+        return createPromiseObject(anyPromise)
+      }
+
+      promiseObj := promiseVal.ToObject(vm)
+      thenFunc, ok := goja.AssertFunction(promiseObj.Get("then"))
+
+      if !ok {
+        continue
+      }
+
+      successHandler := func(call goja.FunctionCall) goja.Value {
+        mu.Lock()
+        defer mu.Unlock()
+
+        if !settled {
+          settled = true
+          anyPromise.resolve(call.Argument(0))
+        }
+
+        return goja.Undefined()
+      }
+
+      errorHandler := func(call goja.FunctionCall) goja.Value {
+        mu.Lock()
+        defer mu.Unlock()
+
+        if settled {
+          return goja.Undefined()
+        }
+
+        errors[index] = call.Argument(0)
+        remaining--
+
+        if remaining == 0 {
+          aggregateError := vm.NewObject()
+          aggregateError.Set("name", "AggregateError")
+          aggregateError.Set("message", "All promises were rejected")
+          aggregateError.Set("errors", vm.ToValue(errors))
+          anyPromise.reject(aggregateError)
+        }
+
+        return goja.Undefined()
+      }
+
+      thenFunc(goja.Undefined(), vm.ToValue(successHandler), vm.ToValue(errorHandler))
+    }
+
+    return createPromiseObject(anyPromise)
+  })
+
+  promiseFuncObj.Set("allSettled", func(call goja.FunctionCall) goja.Value {
+    promisesArg := call.Argument(0)
+
+    if promisesArg.ExportType() == nil {
+      panic(vm.NewTypeError("Promise.allSettled requires an iterable"))
+    }
+
+    promisesObj := promisesArg.ToObject(vm)
+    lengthVal := promisesObj.Get("length")
+    if lengthVal == nil {
+      panic(vm.NewTypeError("Promise.allSettled requires an array"))
+    }
+
+    length := int(lengthVal.ToInteger())
+
+    allSettledPromise := &Promise{
+      vm:          vm,
+      eventLoop:   eventLoop,
+      state:       PromisePending,
+      onFulfilled: []goja.Callable{},
+      onRejected:  []goja.Callable{},
+    }
+
+    if length == 0 {
+      allSettledPromise.resolve(vm.ToValue([]goja.Value{}))
+      return createPromiseObject(allSettledPromise)
+    }
+
+    results := make([]goja.Value, length)
+    var mu sync.Mutex
+    var remaining = length
+
+    for i := 0; i < length; i++ {
+      index := i
+      promiseVal := promisesObj.Get(strconv.Itoa(i))
+
+      if promiseVal.ExportType() == nil || promiseVal.ToObject(vm).Get("then") == nil {
+        // not a promise
+        mu.Lock()
+
+        resultObj := vm.NewObject()
+        resultObj.Set("status", "fulfilled")
+        resultObj.Set("value", promiseVal)
+        results[index] = resultObj
+
+        remaining--
+        if remaining == 0 {
+          allSettledPromise.resolve(vm.ToValue(results))
+        }
+
+        mu.Unlock()
+
+        continue
+      }
+
+      promiseObj := promiseVal.ToObject(vm)
+      thenFunc, ok := goja.AssertFunction(promiseObj.Get("then"))
+
+      if !ok {
+        continue
+      }
+
+      successHandler := func(call goja.FunctionCall) goja.Value {
+        mu.Lock()
+        defer mu.Unlock()
+
+        resultObj := vm.NewObject()
+        resultObj.Set("status", "fulfilled")
+        resultObj.Set("value", call.Argument(0))
+        results[index] = resultObj
+
+        remaining--
+        if remaining == 0 {
+          allSettledPromise.resolve(vm.ToValue(results))
+        }
+
+        return goja.Undefined()
+      }
+
+      errorHandler := func(call goja.FunctionCall) goja.Value {
+        mu.Lock()
+        defer mu.Unlock()
+
+        resultObj := vm.NewObject()
+        resultObj.Set("status", "rejected")
+        resultObj.Set("reason", call.Argument(0))
+        results[index] = resultObj
+
+        remaining--
+        if remaining == 0 {
+          allSettledPromise.resolve(vm.ToValue(results))
+        }
+
+        return goja.Undefined()
+      }
+
+      thenFunc(goja.Undefined(), vm.ToValue(successHandler), vm.ToValue(errorHandler))
+    }
+
+    return createPromiseObject(allSettledPromise)
   })
 
   vm.Set("Promise", promiseFuncObj)

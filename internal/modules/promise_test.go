@@ -575,3 +575,305 @@ func TestPromiseAllWithMixedTimings(t *testing.T) {
 		t.Errorf("Order not preserved: got [%s, %s, %s]", arr[0].String(), arr[1].String(), arr[2].String())
 	}
 }
+
+func TestPromiseAllSettledAllFulfilled(t *testing.T) {
+	vm, loop := setupTestEnvironment()
+	defer loop.Stop()
+
+	script := `
+		var result = null;
+		Promise.allSettled([
+			Promise.resolve(1),
+			Promise.resolve(2),
+			Promise.resolve(3)
+		]).then(function(values) {
+			result = values;
+		});
+	`
+
+	_, err := vm.RunString(script)
+	if err != nil {
+		t.Fatalf("Script execution failed: %v", err)
+	}
+
+	time.Sleep(50 * time.Millisecond)
+	loop.Wait()
+
+	result := vm.Get("result")
+	if result.ExportType() == nil {
+		t.Fatal("Result is nil")
+	}
+
+	arr := result.Export().([]goja.Value)
+	if len(arr) != 3 {
+		t.Errorf("Expected array of length 3, got %d", len(arr))
+	}
+
+	// Check first result
+	obj0 := arr[0].ToObject(vm)
+	if obj0.Get("status").String() != "fulfilled" {
+		t.Errorf("Expected status 'fulfilled', got '%s'", obj0.Get("status").String())
+	}
+	if obj0.Get("value").ToInteger() != 1 {
+		t.Errorf("Expected value 1, got %d", obj0.Get("value").ToInteger())
+	}
+}
+
+func TestPromiseAllSettledAllRejected(t *testing.T) {
+	vm, loop := setupTestEnvironment()
+	defer loop.Stop()
+
+	script := `
+		var result = null;
+		Promise.allSettled([
+			Promise.reject("error1"),
+			Promise.reject("error2"),
+			Promise.reject("error3")
+		]).then(function(values) {
+			result = values;
+		});
+	`
+
+	_, err := vm.RunString(script)
+	if err != nil {
+		t.Fatalf("Script execution failed: %v", err)
+	}
+
+	time.Sleep(50 * time.Millisecond)
+	loop.Wait()
+
+	result := vm.Get("result")
+	if result.ExportType() == nil {
+		t.Fatal("Result is nil")
+	}
+
+	arr := result.Export().([]goja.Value)
+	if len(arr) != 3 {
+		t.Errorf("Expected array of length 3, got %d", len(arr))
+	}
+
+	// Check first result
+	obj0 := arr[0].ToObject(vm)
+	if obj0.Get("status").String() != "rejected" {
+		t.Errorf("Expected status 'rejected', got '%s'", obj0.Get("status").String())
+	}
+	if obj0.Get("reason").String() != "error1" {
+		t.Errorf("Expected reason 'error1', got '%s'", obj0.Get("reason").String())
+	}
+}
+
+func TestPromiseAllSettledMixed(t *testing.T) {
+	vm, loop := setupTestEnvironment()
+	defer loop.Stop()
+
+	script := `
+		var result = null;
+		Promise.allSettled([
+			Promise.resolve(42),
+			Promise.reject("failed"),
+			Promise.resolve("success")
+		]).then(function(values) {
+			result = values;
+		});
+	`
+
+	_, err := vm.RunString(script)
+	if err != nil {
+		t.Fatalf("Script execution failed: %v", err)
+	}
+
+	time.Sleep(50 * time.Millisecond)
+	loop.Wait()
+
+	result := vm.Get("result")
+	arr := result.Export().([]goja.Value)
+
+	if len(arr) != 3 {
+		t.Fatalf("Expected 3 elements, got %d", len(arr))
+	}
+
+	// First: fulfilled
+	obj0 := arr[0].ToObject(vm)
+	if obj0.Get("status").String() != "fulfilled" {
+		t.Errorf("Expected status 'fulfilled', got '%s'", obj0.Get("status").String())
+	}
+	if obj0.Get("value").ToInteger() != 42 {
+		t.Errorf("Expected value 42, got %d", obj0.Get("value").ToInteger())
+	}
+
+	// Second: rejected
+	obj1 := arr[1].ToObject(vm)
+	if obj1.Get("status").String() != "rejected" {
+		t.Errorf("Expected status 'rejected', got '%s'", obj1.Get("status").String())
+	}
+	if obj1.Get("reason").String() != "failed" {
+		t.Errorf("Expected reason 'failed', got '%s'", obj1.Get("reason").String())
+	}
+
+	// Third: fulfilled
+	obj2 := arr[2].ToObject(vm)
+	if obj2.Get("status").String() != "fulfilled" {
+		t.Errorf("Expected status 'fulfilled', got '%s'", obj2.Get("status").String())
+	}
+	if obj2.Get("value").String() != "success" {
+		t.Errorf("Expected value 'success', got '%s'", obj2.Get("value").String())
+	}
+}
+
+func TestPromiseAllSettledEmpty(t *testing.T) {
+	vm, loop := setupTestEnvironment()
+	defer loop.Stop()
+
+	script := `
+		var result = null;
+		Promise.allSettled([]).then(function(values) {
+			result = values;
+		});
+	`
+
+	_, err := vm.RunString(script)
+	if err != nil {
+			t.Fatalf("Script execution failed: %v", err)
+	}
+
+	time.Sleep(50 * time.Millisecond)
+	loop.Wait()
+
+	result := vm.Get("result")
+	arr := result.Export().([]goja.Value)
+	if len(arr) != 0 {
+		t.Errorf("Expected empty array, got length %d", len(arr))
+	}
+}
+
+func TestPromiseAllSettledWithNonPromises(t *testing.T) {
+	vm, loop := setupTestEnvironment()
+	defer loop.Stop()
+
+	script := `
+		var result = null;
+		Promise.allSettled([
+			42,
+			"string",
+			Promise.resolve("promise"),
+			true
+		]).then(function(values) {
+			result = values;
+		});
+	`
+
+	_, err := vm.RunString(script)
+	if err != nil {
+		t.Fatalf("Script execution failed: %v", err)
+	}
+
+	time.Sleep(50 * time.Millisecond)
+	loop.Wait()
+
+	result := vm.Get("result")
+	arr := result.Export().([]goja.Value)
+
+	if len(arr) != 4 {
+		t.Errorf("Expected 4 elements, got %d", len(arr))
+	}
+
+	// Check that all non-promises are fulfilled
+	obj0 := arr[0].ToObject(vm)
+	if obj0.Get("status").String() != "fulfilled" {
+		t.Errorf("Expected status 'fulfilled', got '%s'", obj0.Get("status").String())
+	}
+	if obj0.Get("value").ToInteger() != 42 {
+		t.Errorf("Expected value 42, got %d", obj0.Get("value").ToInteger())
+	}
+}
+
+func TestPromiseAllSettledNeverRejects(t *testing.T) {
+	vm, loop := setupTestEnvironment()
+	defer loop.Stop()
+
+	script := `
+		var rejected = false;
+		var resolved = false;
+		Promise.allSettled([
+			Promise.reject("error1"),
+			Promise.reject("error2")
+		]).then(function(values) {
+			resolved = true;
+		}).catch(function(err) {
+			rejected = true;
+		});
+	`
+
+	_, err := vm.RunString(script)
+	if err != nil {
+		t.Fatalf("Script execution failed: %v", err)
+	}
+
+	time.Sleep(50 * time.Millisecond)
+	loop.Wait()
+
+	resolved := vm.Get("resolved").ToBoolean()
+	rejected := vm.Get("rejected").ToBoolean()
+
+	if !resolved {
+		t.Error("Promise.allSettled should resolve even when all promises reject")
+	}
+	if rejected {
+		t.Error("Promise.allSettled should never reject")
+	}
+}
+
+func TestPromiseAllSettledWithMixedTimings(t *testing.T) {
+	vm, loop := setupTestEnvironment()
+	defer loop.Stop()
+
+	timers := NewTimers(loop)
+	timerObj := timers.Export(vm).ToObject(vm)
+	vm.Set("setTimeout", timerObj.Get("setTimeout"))
+
+	script := `
+		var result = null;
+		Promise.allSettled([
+			new Promise(function(resolve) {
+				setTimeout(function() { resolve("slow"); }, 100);
+			}),
+			Promise.resolve("instant"),
+			new Promise(function(resolve, reject) {
+				setTimeout(function() { reject("medium error"); }, 50);
+			})
+		]).then(function(values) {
+			result = values;
+		});
+	`
+
+	_, err := vm.RunString(script)
+	if err != nil {
+		t.Fatalf("Script execution failed: %v", err)
+	}
+
+	time.Sleep(200 * time.Millisecond)
+	loop.Wait()
+
+	result := vm.Get("result")
+	arr := result.Export().([]goja.Value)
+
+	if len(arr) != 3 {
+		t.Fatalf("Expected 3 elements, got %d", len(arr))
+	}
+
+	// Order should be preserved
+	obj0 := arr[0].ToObject(vm)
+	if obj0.Get("status").String() != "fulfilled" || obj0.Get("value").String() != "slow" {
+		t.Errorf("First promise result incorrect")
+	}
+
+	obj1 := arr[1].ToObject(vm)
+	if obj1.Get("status").String() != "fulfilled" || obj1.Get("value").String() != "instant" {
+		t.Errorf("Second promise result incorrect")
+	}
+
+	obj2 := arr[2].ToObject(vm)
+	if obj2.Get("status").String() != "rejected" || obj2.Get("reason").String() != "medium error" {
+		t.Errorf("Third promise result incorrect")
+	}
+}
