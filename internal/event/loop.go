@@ -230,17 +230,18 @@ func (l *Loop) ClearTimer(id string) {
 	}
 }
 
-// executeTask executes a task's callback synchronously in the event loop goroutine.
-// This ensures true FIFO (First-In-First-Out) execution order, which is critical
-// for Promise resolution order and other async operations.
+// executeTask executes a task's callback in a goroutine and waits for completion.
+// This ensures FIFO ordering: tasks are executed in the exact order they're dequeued,
+// and the event loop doesn't process the next task until the current one finishes.
 //
-// All tasks are executed sequentially in the order they were queued, preventing
-// race conditions and ensuring deterministic behavior.
-//
-// Note: Goja is NOT thread-safe, so all VM operations must happen in a single goroutine.
-// By executing tasks synchronously here (in the event loop's goroutine), we ensure
-// the VM is only accessed from one goroutine at a time.
+// This prevents Goja VM reentrancy issues while maintaining deterministic ordering.
 func (l *Loop) executeTask(task *Task) {
-	defer l.wg.Done()
-	task.Callback()
+	done := make(chan struct{})
+	go func() {
+		defer l.wg.Done()
+		defer close(done)
+		task.Callback()
+	}()
+	// Wait for task to complete before returning to Run() loop
+	<-done
 }
