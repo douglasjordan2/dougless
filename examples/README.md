@@ -154,24 +154,97 @@ curl -X POST http://localhost:3000/api/echo -d '{"test":"data"}'
 
 ---
 
-### 6. `path_module.js`
-**Path manipulation (CommonJS module)**
+### 6. `path_examples.js`
+**Path manipulation (Global API)**
 
-Demonstrates the path module for cross-platform path operations:
+Comprehensive path module demonstration:
 - `path.join()` - Join path segments
 - `path.dirname()` - Get directory name
-- `path.basename()` - Get file name
+- `path.basename()` - Get file name (with optional extension removal)
 - `path.extname()` - Get file extension
 - `path.resolve()` - Resolve absolute paths
 - `path.sep` - OS-specific path separator
+- Complex path operations
+- Backward compatibility with `require('path')`
 
 **Run time:** < 100ms
 
 ```bash
-./dougless examples/path_module.js
+./dougless examples/path_examples.js
 ```
 
-**Note:** This uses `require('path')` to demonstrate the CommonJS module system.
+**Unique Feature:** The `path` API is **globally available** - no `require()` needed!  
+**Note:** `require('path')` still works for backward compatibility.
+
+---
+
+### 7. `sourcemap_examples.js`
+**ES6+ transpilation with source maps**
+
+Demonstrates how Dougless handles modern JavaScript:
+- Arrow functions transpiled to ES5
+- Template literals
+- Error messages with accurate line numbers
+- Source map support for debugging
+
+**Run time:** < 100ms
+
+```bash
+./dougless examples/sourcemap_examples.js
+```
+
+**Key Feature:** Errors reference original source lines, not transpiled code!
+
+---
+
+### 8-12. Promise Examples
+**ES6+ Promises with deterministic FIFO ordering**
+
+- `test-promise.js` - Basic promise operations, chaining, error handling
+- `test-promise-all.js` - `Promise.all()` - wait for all promises
+- `test-promise-race.js` - `Promise.race()` - first to settle wins
+- `test-promise-any.js` - `Promise.any()` - first to fulfill wins
+- `test-promise-allsettled.js` - `Promise.allSettled()` - wait for all, never rejects
+
+```bash
+./dougless examples/test-promise.js
+./dougless examples/test-promise-all.js
+./dougless examples/test-promise-race.js
+./dougless examples/test-promise-any.js
+./dougless examples/test-promise-allsettled.js
+```
+
+**Note:** All promise methods include timing tests and edge cases.
+
+---
+
+### 13-15. WebSocket Examples
+**Real-time bidirectional communication**
+
+- `websocket_simple.js` - Basic WebSocket server
+- `websocket_server.js` - WebSocket with message broadcasting
+- `websocket_chat.js` - Multi-client chat application
+
+```bash
+./dougless examples/websocket_simple.js
+```
+
+**Key Feature:** WebSocket support integrated with HTTP server!
+
+---
+
+### 16. `test_permissions.js`
+**Permission system demonstration**
+
+Shows the interactive permission model:
+- File read/write permissions
+- Network access permissions
+- Interactive prompts
+- Permission caching
+
+```bash
+./dougless examples/test_permissions.js
+```
 
 ---
 
@@ -185,21 +258,35 @@ Demonstrates the path module for cross-platform path operations:
 ### Global APIs (Unique to Dougless)
 - `file_operations.js` - File system (global `file`)
 - `http_demo.js` - HTTP client/server (global `http`)
+- `path_examples.js` - Path manipulation (global `path`)
 
-### Module System
-- `path_module.js` - CommonJS require()
+### ES6+ & Modern JavaScript
+- `sourcemap_examples.js` - Transpilation and source maps
+- `test-promise*.js` - Promise/A+ implementation (5 files)
+
+### Real-time Communication
+- `websocket_*.js` - WebSocket examples (3 files)
+
+### Security
+- `test_permissions.js` - Permission system
 
 ---
 
 ## Running Multiple Examples
 
 ```bash
-# Run all examples in sequence
+# Run basic examples in sequence
 ./dougless examples/hello.js
 ./dougless examples/console_features.js
 ./dougless examples/timers.js
 ./dougless examples/file_operations.js
-./dougless examples/path_module.js
+./dougless examples/path_examples.js
+./dougless examples/sourcemap_examples.js
+
+# Promise examples
+./dougless examples/test-promise.js
+./dougless examples/test-promise-all.js
+./dougless examples/test-promise-race.js
 
 # HTTP demo last (it keeps running)
 ./dougless examples/http_demo.js
@@ -214,9 +301,12 @@ Demonstrates the path module for cross-platform path operations:
 1. **`hello.js`** - Get familiar with the basics
 2. **`console_features.js`** - Learn debugging and output
 3. **`timers.js`** - Understand async operations
-4. **`path_module.js`** - Work with file paths
+4. **`path_examples.js`** - Work with file paths
 5. **`file_operations.js`** - Read/write files
-6. **`http_demo.js`** - Build web applications
+6. **`sourcemap_examples.js`** - ES6+ and transpilation
+7. **`test-promise.js`** - Modern async with Promises
+8. **`http_demo.js`** - Build web applications
+9. **`websocket_simple.js`** - Real-time communication
 
 ---
 
