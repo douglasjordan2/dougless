@@ -8,25 +8,49 @@ import (
   "github.com/douglasjordan2/dougless/internal/event"
 )
 
+// PromiseState represents the current state of a Promise.
 type PromiseState int
 
+// Promise states as defined by the Promise/A+ specification.
 const (
-  PromisePending PromiseState = iota
-  PromiseFulfilled
-  PromiseRejected
+  PromisePending PromiseState = iota  // Promise is pending (initial state)
+  PromiseFulfilled                     // Promise has been resolved with a value
+  PromiseRejected                      // Promise has been rejected with a reason
 )
 
+// Promise represents a Promise/A+ compliant promise implementation.
+// Promises provide a way to handle asynchronous operations with chainable .then() and .catch() methods.
+// All promise handlers are executed asynchronously on the event loop.
+//
+// Available globally in JavaScript as the 'Promise' constructor.
+//
+// Example usage:
+//
+//	const p = new Promise((resolve, reject) => {
+//	  setTimeout(() => resolve(42), 1000);
+//	});
+//	p.then(value => console.log('Got:', value));
 type Promise struct {
-  vm          *goja.Runtime
-  eventLoop   *event.Loop
-  state       PromiseState
-  value       goja.Value
-  reason      goja.Value
-  onFulfilled []goja.Callable
-  onRejected  []goja.Callable
-  mu          sync.Mutex
+  vm          *goja.Runtime      // JavaScript runtime instance
+  eventLoop   *event.Loop         // Event loop for async handler execution
+  state       PromiseState        // Current promise state (pending, fulfilled, or rejected)
+  value       goja.Value          // Resolved value (when fulfilled)
+  reason      goja.Value          // Rejection reason (when rejected)
+  onFulfilled []goja.Callable     // Handlers to call when promise is fulfilled
+  onRejected  []goja.Callable     // Handlers to call when promise is rejected
+  mu          sync.Mutex          // Protects state changes and handler lists
 }
 
+// NewPromise creates a new Promise instance and executes the executor function.
+// The executor is called immediately with resolve and reject callback functions.
+//
+// Parameters:
+//   - vm: JavaScript runtime instance
+//   - eventLoop: Event loop for scheduling async handlers
+//   - executor: Function called with (resolve, reject) callbacks
+//
+// If the executor throws an error, the promise is automatically rejected.
+// This function is used internally by the Promise constructor in JavaScript.
 func NewPromise(vm *goja.Runtime, eventLoop *event.Loop, executor goja.Callable) *Promise {
   p := &Promise{
     vm:          vm,
@@ -54,6 +78,11 @@ func NewPromise(vm *goja.Runtime, eventLoop *event.Loop, executor goja.Callable)
   return p
 }
 
+// resolve transitions the promise from pending to fulfilled state.
+// All registered fulfillment handlers are scheduled on the event loop.
+// If the promise is already settled, this is a no-op (per Promise/A+ spec).
+//
+// This method is thread-safe and idempotent.
 func (p *Promise) resolve(value goja.Value) {
   p.mu.Lock()
   defer p.mu.Unlock()
@@ -78,6 +107,11 @@ func (p *Promise) resolve(value goja.Value) {
   p.onRejected = nil
 }
 
+// reject transitions the promise from pending to rejected state.
+// All registered rejection handlers are scheduled on the event loop.
+// If the promise is already settled, this is a no-op (per Promise/A+ spec).
+//
+// This method is thread-safe and idempotent.
 func (p *Promise) reject(reason goja.Value) {
   p.mu.Lock()
   defer p.mu.Unlock()
@@ -102,6 +136,28 @@ func (p *Promise) reject(reason goja.Value) {
   p.onRejected = nil
 }
 
+// Then implements promise chaining by attaching fulfillment and rejection handlers.
+// Returns a new Promise that will be resolved/rejected based on the handler's return value.
+//
+// Parameters:
+//   - onFulfilled: Called when the promise is fulfilled (can be nil)
+//   - onRejected: Called when the promise is rejected (can be nil)
+//
+// Behavior (per Promise/A+ spec):
+//   - If onFulfilled returns a value, the new promise is fulfilled with that value
+//   - If onFulfilled returns a thenable (has .then method), it's chained
+//   - If onFulfilled throws, the new promise is rejected
+//   - If onFulfilled is nil, the value propagates to the next .then()
+//   - Similar rules apply for onRejected
+//
+// All handlers are executed asynchronously on the event loop.
+//
+// Example:
+//
+//	promise.then(
+//	  value => console.log('Success:', value),
+//	  error => console.error('Error:', error)
+//	);
 func (p *Promise) Then(onFulfilled, onRejected goja.Callable) *Promise {
   newPromise := &Promise{
     vm:          p.vm,
@@ -200,10 +256,33 @@ func (p *Promise) Then(onFulfilled, onRejected goja.Callable) *Promise {
   return newPromise
 }
 
+// Catch is a convenience method for handling promise rejections.
+// It's equivalent to calling .then(nil, onRejected).
+//
+// Parameters:
+//   - onRejected: Called when the promise is rejected
+//
+// Returns a new Promise that resolves to the return value of onRejected.
+//
+// Example:
+//
+//	promise.catch(error => console.error('Error:', error));
 func (p *Promise) Catch(onRejected goja.Callable) *Promise {
   return p.Then(nil, onRejected)
 }
 
+// SetupPromise initializes the global Promise constructor in JavaScript.
+// This function is called once during runtime initialization.
+//
+// It creates the Promise constructor and adds static methods:
+//   - Promise.resolve(value): Creates a fulfilled promise
+//   - Promise.reject(reason): Creates a rejected promise
+//   - Promise.all(promises): Waits for all promises to fulfill
+//   - Promise.race(promises): Resolves/rejects with the first settled promise
+//   - Promise.allSettled(promises): Waits for all promises to settle
+//   - Promise.any(promises): Resolves with the first fulfilled promise
+//
+// The Promise constructor is made available globally, following ECMAScript standards.
 func SetupPromise(vm *goja.Runtime, eventLoop *event.Loop) {
   // Create the Promise constructor
   promiseConstructor := func(call goja.ConstructorCall) *goja.Object {

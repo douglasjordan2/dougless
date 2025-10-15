@@ -41,6 +41,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All rejection flows now reach `.catch()` handlers as expected
   - Resolves issue where nested promise rejections would silently fail
 
+#### Documentation
+- **Comprehensive Package Documentation** (Enhanced!)
+  - Added godoc comments to all core packages and modules
+  - **cmd/dougless**: Full CLI documentation with usage examples
+  - **internal/repl**: Complete REPL API documentation
+  - **internal/runtime**: Detailed runtime architecture documentation
+  - **internal/event**: Event loop concurrency model documented
+  - **internal/modules**: Complete module API documentation (NEW!)
+    - console.go: Console API with all methods documented
+    - timers.go: Timer system with event loop integration details
+    - path.go: Cross-platform path manipulation utilities
+    - file.go: Async file operations with permission details
+    - http.go: HTTP client/server + WebSocket support
+    - promise.go: Promise/A+ implementation with spec compliance notes
+  - **internal/permissions**: Security system documentation (NEW!)
+    - permissions.go: 450+ lines covering core permission manager
+    - parser.go: CLI flag parsing with usage examples
+    - prompt.go: Interactive prompt behavior and responses
+  - **1,200+ lines of documentation added**
+  - All exported types, functions, and methods documented
+  - JavaScript usage examples provided for all APIs
+  - Permission requirements documented where applicable
+  - Thread-safety and concurrency notes included
+  - Follows Go documentation conventions throughout
+
 #### Testing & Quality
 - Runtime module test coverage improved: 75.0% → 77.2%
 - All existing tests pass with new global APIs

@@ -1,3 +1,5 @@
+// Package permissions parser handles CLI flag parsing for permission grants.
+// Supports flags like --allow-read, --allow-net, --allow-all with optional values.
 package permissions
 
 import (
@@ -6,6 +8,24 @@ import (
   "strings"
 )
 
+// ParseFlags parses command-line arguments and extracts permission flags.
+// Returns a configured Manager, remaining non-permission arguments, and any parse errors.
+//
+// Supported flags:
+//   --allow-all or -A: Grant all permissions (warns about security implications)
+//   --allow-read[=paths]: Grant read permission (comma-separated paths, empty = all)
+//   --allow-write[=paths]: Grant write permission
+//   --allow-net[=hosts]: Grant network permission (supports wildcards and ports)
+//   --allow-env[=vars]: Grant environment variable access
+//   --allow-run[=programs]: Grant program execution permission
+//   --prompt: Force enable interactive prompts
+//   --no-prompt: Disable interactive prompts
+//
+// Examples:
+//   dougless --allow-read script.js                    (all read access)
+//   dougless --allow-read=.,/tmp script.js             (specific paths)
+//   dougless --allow-net=localhost:3000 script.js      (specific host:port)
+//   dougless --allow-all script.js                     (all permissions)
 func ParseFlags(args []string) (*Manager, []string, error) {
   manager := NewManager()
   remainingArgs := []string{}
@@ -65,6 +85,9 @@ func ParseFlags(args []string) (*Manager, []string, error) {
   return manager, remainingArgs, nil
 }
 
+// parsePermissionValue extracts values from permission flags.
+// Handles flags in formats: --flag (allow all), --flag= (error), --flag=val1,val2
+// Returns a slice of trimmed values or an error for invalid formats.
 func parsePermissionValue(arg, flagName string) ([]string, error) {
   if !strings.Contains(arg, "=") {
     return []string{}, nil // nothing specified means allow all

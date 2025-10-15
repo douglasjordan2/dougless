@@ -1,3 +1,38 @@
+// Package main provides the Dougless Runtime CLI executable.
+//
+// Dougless is a custom JavaScript runtime built in Go, designed to execute
+// modern JavaScript (ES6+) with automatic transpilation to ES5. It supports
+// two modes of operation:
+//
+//  1. REPL Mode (no arguments): Interactive JavaScript shell
+//  2. Script Mode: Execute JavaScript files
+//
+// Usage:
+//
+//	dougless [flags] [script.js]
+//
+// Flags:
+//
+//	--allow-read[=path]       Grant read access (optionally to specific paths)
+//	--allow-write[=path]      Grant write access (optionally to specific paths)
+//	--allow-net[=host]        Grant network access (optionally to specific hosts)
+//	--allow-env[=var]         Grant environment variable access
+//	--allow-run[=program]     Grant subprocess execution access
+//	--allow-all               Grant all permissions (for development)
+//
+// Examples:
+//
+//	# Start interactive REPL
+//	dougless
+//
+//	# Execute a script
+//	dougless script.js
+//
+//	# Execute with specific permissions
+//	dougless --allow-read=/tmp --allow-net=api.example.com script.js
+//
+//	# Execute with all permissions
+//	dougless --allow-all script.js
 package main
 
 import (

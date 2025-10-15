@@ -1,3 +1,27 @@
+// Package event implements a non-blocking event loop for asynchronous operations.
+//
+// The event loop enables async JavaScript features like setTimeout, setInterval,
+// and Promise resolution. It uses Go's concurrency primitives (channels, goroutines)
+// to provide non-blocking I/O and task scheduling.
+//
+// Key features:
+//   - Task queue with buffered channel (100 capacity)
+//   - Timer management using Go's time.AfterFunc
+//   - Graceful shutdown with WaitGroup synchronization
+//   - Context-based cancellation support
+//
+// Example usage:
+//
+//	loop := event.NewLoop()
+//	go loop.Run()
+//	defer loop.Stop()
+//
+//	loop.ScheduleTask(&event.Task{
+//	    Callback: func() { fmt.Println("Hello") },
+//	    Delay: 100 * time.Millisecond,
+//	})
+//
+//	loop.Wait()  // Wait for all tasks to complete
 package event
 
 import (
@@ -6,26 +30,34 @@ import (
 	"time"
 )
 
-// Task represents a task to be executed in the event loop
+// Task represents a unit of work to be executed in the event loop.
 type Task struct {
-	ID       string
-	Callback func()
-	Delay    time.Duration
-	Interval bool
+	ID       string          // Unique identifier for the task (used for timer cancellation)
+	Callback func()          // Function to execute
+	Delay    time.Duration   // Delay before execution (0 for immediate)
+	Interval bool            // If true, task repeats at Delay intervals
 }
 
-// Loop represents the event loop
+// Loop represents the event loop that processes async tasks.
+// It manages a queue of tasks and scheduled timers, executing them
+// in separate goroutines to maintain non-blocking behavior.
 type Loop struct {
-	tasks   chan *Task
-	timers  map[string]*time.Timer
-	ctx     context.Context
-	cancel  context.CancelFunc
-	wg      sync.WaitGroup
-	mu      sync.RWMutex
-	running bool
+	tasks   chan *Task              // Buffered channel for task queue (capacity: 100)
+	timers  map[string]*time.Timer  // Map of timer IDs to Go timers
+	ctx     context.Context         // Context for cancellation
+	cancel  context.CancelFunc      // Function to cancel the context
+	wg      sync.WaitGroup          // Tracks pending tasks for graceful shutdown
+	mu      sync.RWMutex            // Protects timers map and running flag
+	running bool                    // Indicates if the loop is currently running
 }
 
-// NewLoop creates a new event loop
+// NewLoop creates and initializes a new event loop.
+// The loop must be started with Run() before it can process tasks.
+//
+// Example:
+//
+//	loop := event.NewLoop()
+//	go loop.Run()
 func NewLoop() *Loop {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Loop{
@@ -36,7 +68,13 @@ func NewLoop() *Loop {
 	}
 }
 
-// NewLoopWithContext creates a new event loop with a custom context
+// NewLoopWithContext creates a new event loop with a custom parent context.
+// The loop will be cancelled when the parent context is cancelled.
+//
+// This is useful for implementing timeout or cancellation policies:
+//
+//	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+//	loop := event.NewLoopWithContext(ctx)
 func NewLoopWithContext(ctx context.Context) *Loop {
 	loopCtx, cancel := context.WithCancel(ctx)
 	return &Loop{
@@ -47,7 +85,14 @@ func NewLoopWithContext(ctx context.Context) *Loop {
 	}
 }
 
-// Run starts the event loop
+// Run starts the event loop and begins processing tasks.
+// This method blocks until Stop() is called or the context is cancelled.
+//
+// Run should typically be called in a separate goroutine:
+//
+//	go loop.Run()
+//
+// The loop is safe to call multiple times; subsequent calls are no-ops.
 func (l *Loop) Run() {
 	l.mu.Lock()
 	if l.running {
@@ -69,7 +114,14 @@ func (l *Loop) Run() {
 	}
 }
 
-// Stop stops the event loop
+// Stop gracefully shuts down the event loop.
+//
+// It:
+//  1. Cancels the loop context
+//  2. Stops all pending timers
+//  3. Marks tasks as complete to unblock Wait()
+//
+// After Stop() is called, no new tasks will be processed.
 func (l *Loop) Stop() {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -89,11 +141,27 @@ func (l *Loop) Stop() {
 	l.timers = make(map[string]*time.Timer)
 }
 
-// Wait waits for all pending tasks to complete
+// Wait blocks until all pending tasks have completed.
+// This is typically called after the main script execution finishes
+// to ensure all async operations (timers, promises) complete.
+//
+// Example:
+//
+//	loop.ScheduleTask(task)
+//	loop.Wait()  // Blocks until task completes
 func (l *Loop) Wait() {
 	l.wg.Wait()
 }
 
+// KeepAlive increments the task counter and returns a function to decrement it.
+// This is useful for keeping the event loop alive during async operations
+// that don't go through ScheduleTask (e.g., HTTP servers).
+//
+// Example:
+//
+//	done := loop.KeepAlive()
+//	defer done()
+//	// ... perform async work ...
 func (l *Loop) KeepAlive() func() {
   l.wg.Add(1)
   return func() {
@@ -101,7 +169,19 @@ func (l *Loop) KeepAlive() func() {
   }
 }
 
-// ScheduleTask schedules a task to be executed
+// ScheduleTask queues a task for execution on the event loop.
+//
+// Tasks with Delay > 0 are scheduled using Go timers and executed after the delay.
+// Tasks with Delay == 0 are executed as soon as the loop processes them.
+//
+// All tasks are tracked in the WaitGroup until they complete.
+//
+// Example:
+//
+//	loop.ScheduleTask(&event.Task{
+//	    Callback: func() { fmt.Println("Delayed") },
+//	    Delay: 1 * time.Second,
+//	})
 func (l *Loop) ScheduleTask(task *Task) {
   l.wg.Add(1) // track pending task when it's scheduled to account for delayed tasks (ex: setTimeout)
 	if task.Delay > 0 {
@@ -111,7 +191,8 @@ func (l *Loop) ScheduleTask(task *Task) {
 	}
 }
 
-// scheduleDelayedTask schedules a task with a delay
+// scheduleDelayedTask schedules a task to execute after a delay using Go's time.AfterFunc.
+// For interval tasks (task.Interval == true), the task is automatically rescheduled after execution.
 func (l *Loop) scheduleDelayedTask(task *Task) {
 	timer := time.AfterFunc(task.Delay, func() {
 		l.tasks <- task
@@ -133,7 +214,10 @@ func (l *Loop) scheduleDelayedTask(task *Task) {
 	l.mu.Unlock()
 }
 
-// ClearTimer clears a scheduled timer
+// ClearTimer cancels a scheduled timer by its ID.
+// This is used to implement clearTimeout() and clearInterval().
+//
+// If the timer doesn't exist, this is a no-op.
 func (l *Loop) ClearTimer(id string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -145,7 +229,8 @@ func (l *Loop) ClearTimer(id string) {
 	}
 }
 
-// executeTask executes a task
+// executeTask runs a task's callback in a separate goroutine.
+// The task is marked as complete (WaitGroup) when the callback returns.
 func (l *Loop) executeTask(task *Task) {
 	go func() {
 		defer l.wg.Done()

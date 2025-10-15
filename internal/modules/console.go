@@ -1,6 +1,3 @@
-// Package modules provides built-in JavaScript modules and global APIs
-// for the Dougless runtime, including console operations, file system access,
-// HTTP client/server functionality, and timer utilities.
 package modules
 
 import (
@@ -11,18 +8,26 @@ import (
 	"github.com/dop251/goja"
 )
 
+// Console provides debugging and logging functionality for JavaScript.
+// It implements the standard console API with methods for output, warnings,
+// errors, performance timing, and table formatting.
+//
+// Available globally in JavaScript as the 'console' object.
 type Console struct {
-  vm     *goja.Runtime
-  timers map[string]time.Time
-  timersMu sync.Mutex
+  vm     *goja.Runtime         // JavaScript runtime instance
+  timers map[string]time.Time  // Performance timers for console.time/timeEnd
+  timersMu sync.Mutex          // Protects timers map
 }
 
+// NewConsole creates a new Console instance.
 func NewConsole() *Console {
   return &Console{
     timers: make(map[string]time.Time),
   }
 }
 
+// Export creates and returns the console JavaScript object with all methods.
+// This is called when the console global is initialized.
 func (c *Console) Export(vm *goja.Runtime) goja.Value {
   c.vm = vm
   obj := vm.NewObject()
@@ -37,6 +42,12 @@ func (c *Console) Export(vm *goja.Runtime) goja.Value {
   return obj
 }
 
+// consoleLog implements console.log() - outputs messages to stdout.
+// Accepts multiple arguments of any type.
+//
+// JavaScript usage:
+//
+//	console.log('Hello', 'World', 123, {foo: 'bar'});
 func (c *Console) consoleLog(call goja.FunctionCall) goja.Value {
 	args := make([]any, len(call.Arguments))
 	for i, arg := range call.Arguments {
@@ -46,6 +57,12 @@ func (c *Console) consoleLog(call goja.FunctionCall) goja.Value {
 	return goja.Undefined()
 }
 
+// consoleError implements console.error() - outputs error messages with ERROR prefix.
+// Accepts multiple arguments of any type.
+//
+// JavaScript usage:
+//
+//	console.error('Something went wrong:', error);
 func (c *Console) consoleError(call goja.FunctionCall) goja.Value {
 	args := make([]any, len(call.Arguments))
 	for i, arg := range call.Arguments {
@@ -56,6 +73,12 @@ func (c *Console) consoleError(call goja.FunctionCall) goja.Value {
 	return goja.Undefined()
 }
 
+// consoleWarn implements console.warn() - outputs warning messages with WARN prefix.
+// Accepts multiple arguments of any type.
+//
+// JavaScript usage:
+//
+//	console.warn('Deprecated function used');
 func (c *Console) consoleWarn(call goja.FunctionCall) goja.Value {
 	args := make([]any, len(call.Arguments))
 	for i, arg := range call.Arguments {
@@ -66,6 +89,15 @@ func (c *Console) consoleWarn(call goja.FunctionCall) goja.Value {
 	return goja.Undefined()
 }
 
+// consoleTime implements console.time() - starts a performance timer.
+// The timer is identified by an optional label (defaults to "default").
+// Use console.timeEnd() with the same label to measure elapsed time.
+//
+// JavaScript usage:
+//
+//	console.time('myTimer');
+//	// ... some operations ...
+//	console.timeEnd('myTimer');  // Outputs: myTimer: 123.456ms
 func (c *Console) consoleTime(call goja.FunctionCall) goja.Value {
   label := "default"
   if len(call.Arguments) > 0 {
@@ -79,6 +111,11 @@ func (c *Console) consoleTime(call goja.FunctionCall) goja.Value {
   return goja.Undefined()
 }
 
+// consoleTimeEnd implements console.timeEnd() - stops a timer and displays elapsed time.
+// Must be paired with a console.time() call using the same label.
+// Outputs the duration in milliseconds with 3 decimal precision.
+//
+// If no timer exists with the given label, outputs a warning.
 func (c *Console) consoleTimeEnd(call goja.FunctionCall) goja.Value {
   label := "default"
   if len(call.Arguments) > 0 {
@@ -103,6 +140,13 @@ func (c *Console) consoleTimeEnd(call goja.FunctionCall) goja.Value {
   return goja.Undefined()
 }
 
+// consoleTable implements console.table() - displays data in a formatted table.
+// Supports arrays and objects. Data is displayed with borders and proper alignment.
+//
+// JavaScript usage:
+//
+//	console.table([1, 2, 3, 4]);  // Array table with index
+//	console.table({name: 'Alice', age: 30});  // Object table with keys
 func (c *Console) consoleTable(call goja.FunctionCall) goja.Value {
   if len(call.Arguments) == 0 {
     return goja.Undefined()
@@ -124,6 +168,8 @@ func (c *Console) consoleTable(call goja.FunctionCall) goja.Value {
   return goja.Undefined()
 }
 
+// printArrayTable formats and prints an array as a table.
+// Each element gets an index column and a value column.
 func (c *Console) printArrayTable(data []any) {
   if len(data) == 0 {
     return
@@ -159,6 +205,8 @@ func (c *Console) printArrayTable(data []any) {
   fmt.Println("└─────────┴" + repeatChar('─', maxWidth+2) + "┘")
 }
 
+// printObjectTable formats and prints an object as a table.
+// Keys are displayed in the first column, values in the second.
 func (c *Console) printObjectTable(data map[string]any) {
   if len(data) == 0 {
     return

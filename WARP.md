@@ -206,12 +206,20 @@ All Phase 1 objectives have been successfully implemented:
 - ✅ Event loop integration for async HTTP operations
 
 ### Phase 4 (Security & Permissions) - COMPLETE ✅
-- ✅ Deno-inspired permission system
-- ✅ CLI flags for permission grants (--allow-read, --allow-write, --allow-net, etc.)
+- ✅ Initial permission system implementation
+- ✅ CLI flags for permission grants (--allow-read, --allow-write, --allow-net, etc.) **[DEPRECATED]**
 - ✅ Interactive permission prompts in terminal mode
 - ✅ Path-based and network-based granular controls
 - ✅ Permission caching and session management
 - ✅ Clear error messages with actionable suggestions
+
+**Planned Evolution**: The CLI flag-based approach will be deprecated in favor of a config-first model:
+- **Production**: Permissions defined exclusively in `.douglessrc` or `.douglessrc.json`
+- **Development**: Two-step interactive prompt flow:
+  1. First prompt: `Allow [operation]? yes/no` - grants permission for current session
+  2. If 'yes': `Add to .douglessrc? yes/no` - optionally persists to config file
+  3. This allows developers to build their `.douglessrc` incrementally during development
+- **Goal**: Distinguish Dougless from Deno with a cleaner, more project-centric permission model
 
 ### Phase 5 (Promises & ES6+) - COMPLETE ✅
 - ✅ Full Promise/A+ implementation
@@ -320,7 +328,7 @@ See `docs/transpilation_strategy.md` for complete strategy details and `internal
 1. **ES6+ Support**: Modern JavaScript syntax is now fully supported via esbuild transpilation.
 2. **Module System**: CommonJS-style, not ES6 modules (import/export) - ES modules planned for future.
 3. **Async Pattern**: ✅ Promises and async/await now fully supported!
-4. **Security Model**: Deno-inspired permission system for file, network, and environment access.
+4. **Security Model**: Config-first permission system using `.douglessrc`/`.douglessrc.json`. Development mode uses two-step prompts (yes/no → add to config?) to build permissions incrementally. CLI flags are deprecated.
 5. **WebSocket Focus**: Core design goal is supporting real-time WebSocket applications.
 6. **Plugin System**: Custom plugin architecture planned for framework extensibility.
 7. **Global-First Design**: Core APIs (file, http, Promise) are available globally without require() - a unique Dougless feature.

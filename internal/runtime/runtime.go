@@ -30,15 +30,28 @@ import (
 	"github.com/douglasjordan2/dougless/internal/modules"
 )
 
-// Runtime represents the JavaScript execution environment
+// Runtime represents the JavaScript execution environment.
+// It coordinates the Goja VM, event loop, and module system to provide
+// a complete JavaScript runtime with async capabilities.
 type Runtime struct {
-	vm           *goja.Runtime
-	eventLoop    *event.Loop
-	modules      *modules.Registry
-  timers       map[string]time.Time
-  timersMu     sync.Mutex
+	vm           *goja.Runtime      // Goja JavaScript VM (ES5.1)
+	eventLoop    *event.Loop        // Event loop for async operations
+	modules      *modules.Registry  // Registry of loadable modules
+  timers       map[string]time.Time  // Timer tracking for console.time()
+  timersMu     sync.Mutex         // Protects timers map
 }
 
+// New creates and initializes a new Runtime instance.
+// It sets up the Goja VM, event loop, module registry, and all global APIs.
+//
+// The returned runtime is ready to execute JavaScript code via Execute or ExecuteFile.
+//
+// Example:
+//
+//	rt := runtime.New()
+//	if err := rt.ExecuteFile("script.js"); err != nil {
+//	    log.Fatal(err)
+//	}
 func New() *Runtime {
 	vm := goja.New()
 	eventLoop := event.NewLoop()
@@ -57,6 +70,11 @@ func New() *Runtime {
 	return rt
 }
 
+// ExecuteFile reads and executes a JavaScript file.
+// The source code is automatically transpiled from ES6+ to ES5 before execution.
+//
+// Returns an error if the file cannot be read, transpilation fails, or
+// execution encounters a JavaScript error.
 func (rt *Runtime) ExecuteFile(filename string) error {
 	source, err := os.ReadFile(filename)
 	if err != nil {
@@ -66,7 +84,16 @@ func (rt *Runtime) ExecuteFile(filename string) error {
 	return rt.Execute(string(source), filename)
 }
 
-// Execute runs JavaScript code
+// Execute runs JavaScript code from a string.
+//
+// The source code is:
+//  1. Transpiled from ES6+ to ES5 using esbuild
+//  2. Executed in the Goja VM
+//  3. All async operations are run through the event loop
+//
+// The filename parameter is used for error messages and source maps.
+//
+// Returns an error if transpilation or execution fails.
 func (rt *Runtime) Execute(source, filename string) error {
 	// Start the event loop in a separate goroutine
 	go rt.eventLoop.Run()
@@ -87,6 +114,15 @@ func (rt *Runtime) Execute(source, filename string) error {
 	return nil
 }
 
+// transpile converts ES6+ JavaScript to ES5 using esbuild.
+//
+// Features:
+//   - Transpiles to ES2017 (supports async/await natively)
+//   - Generates inline source maps for accurate error reporting
+//   - Handles edge case of empty scripts (which produce invalid source maps)
+//   - Reports warnings to stderr
+//
+// Returns the transpiled JavaScript code or an error if transpilation fails.
 func (rt *Runtime) transpile(source, filename string) (string, error) {
 	// Use inline source maps for better debugging, but only when there's actual code
 	// Empty/whitespace-only scripts produce invalid source maps that Goja can't parse
@@ -128,7 +164,16 @@ func (rt *Runtime) transpile(source, filename string) (string, error) {
 	return string(result.Code), nil
 }
 
-// initializeGlobals sets up global objects and functions
+// initializeGlobals sets up all global objects and functions available in JavaScript.
+//
+// Global APIs (no require needed):
+//   - console (log, error, warn, time, timeEnd, table)
+//   - setTimeout, setInterval, clearTimeout, clearInterval
+//   - path (join, resolve, dirname, basename, extname, sep)
+//   - file (read, write, readdir, exists, mkdir, rmdir, unlink, stat)
+//   - http (get, post, createServer)
+//   - Promise (constructor, resolve, reject, all, race)
+//   - require() (for CommonJS-style module loading)
 func (rt *Runtime) initializeGlobals() {
 	// Console object
 	console := modules.NewConsole()
@@ -161,11 +206,27 @@ func (rt *Runtime) initializeGlobals() {
   rt.vm.Set("require", rt.requireFunction)
 }
 
-// initializeModules registers built-in modules
+// initializeModules registers built-in modules that can be loaded via require().
+//
+// Currently registered modules:
+//   - path: File path manipulation utilities
+//
+// Note: Most core APIs (file, http, console) are available globally and
+// don't need to be required.
 func (rt *Runtime) initializeModules() {
 	rt.modules.Register("path", modules.NewPath())
 }
 
+// requireFunction implements the CommonJS require() function.
+// It loads and returns built-in modules registered in the module registry.
+//
+// Usage in JavaScript:
+//
+//	const path = require('path');
+//	path.join('foo', 'bar');  // 'foo/bar'
+//
+// Panics with a TypeError if no module name is provided, or a GoError if
+// the module doesn't exist.
 func (rt *Runtime) requireFunction(call goja.FunctionCall) goja.Value {
 	if len(call.Arguments) == 0 {
 		panic(rt.vm.NewTypeError("require() missing module name"))
@@ -181,6 +242,15 @@ func (rt *Runtime) requireFunction(call goja.FunctionCall) goja.Value {
 	return module.Export(rt.vm)
 }
 
+// Evaluate executes JavaScript code and returns the result.
+// This is used primarily by the REPL for interactive evaluation.
+//
+// Unlike Execute(), this method:
+//   - Does NOT transpile the code (assumes ES5)
+//   - Does NOT start/stop the event loop
+//   - Returns the evaluation result directly
+//
+// Returns the result value and any error that occurred during execution.
 func (r *Runtime) Evaluate(code string) (goja.Value, error) {
   return r.vm.RunString(code)
 }
