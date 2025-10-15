@@ -513,9 +513,7 @@ func SetupPromise(vm *goja.Runtime, eventLoop *event.Loop) {
     var mu sync.Mutex
     var settled = false
 
-    // Iterate in reverse order so first promise wins when multiple are already resolved
-    // (due to goroutine scheduling, last-scheduled task often executes first)
-    for i := length - 1; i >= 0; i-- {
+    for i := 0; i < length; i++ {
       promiseVal := promisesObj.Get(strconv.Itoa(i))
 
       if promiseVal.ExportType() == nil || promiseVal.ToObject(vm).Get("then") == nil {

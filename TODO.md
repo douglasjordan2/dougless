@@ -47,17 +47,18 @@ Last Updated: 2025-10-14 23:19 UTC
   - Permission system
 - [ ] Run `go test -cover ./...` to check coverage
 
-### 1.5. Complete Promise Implementation (MEDIUM PRIORITY)
-**Status:** Partially complete (2/4 methods implemented)  
-**Implemented:**
+### 1.5. Complete Promise Implementation ✅ (COMPLETE - Oct 15, 2024)
+**Status:** ✅ ALL METHODS IMPLEMENTED - PHASE 5 COMPLETE
 - [x] `Promise.all()` - ✅ Working
 - [x] `Promise.race()` - ✅ Working
-
-**TODO:**
-- [ ] Implement `Promise.any()` static method in `internal/modules/promise.go`
-- [ ] Implement `Promise.allSettled()` static method in `internal/modules/promise.go`
-- [ ] Add tests for both new Promise methods
-- [ ] Update CHANGELOG.md to reflect actual status
+- [x] `Promise.any()` - ✅ Working (was already implemented)
+- [x] `Promise.allSettled()` - ✅ Working (newly implemented Oct 15)
+- [x] Comprehensive test coverage (18/18 tests passing)
+- [x] Example files for all methods
+- [x] ES6+ transpilation with esbuild (async/await, arrow functions, etc.)
+- [x] CHANGELOG.md updated
+- [x] ROADMAP.md updated
+- [x] **Phase 5 (Promises & ES6+) is now 100% COMPLETE**
 
 ### 1.6. Unify file.read() and file.readdir()
 - [ ] Consider making `file.read()` smart enough to detect files vs directories

@@ -40,15 +40,16 @@ type Task struct {
 
 // Loop represents the event loop that processes async tasks.
 // It manages a queue of tasks and scheduled timers, executing them
-// in separate goroutines to maintain non-blocking behavior.
+// sequentially to maintain FIFO order for immediate tasks.
 type Loop struct {
-	tasks   chan *Task              // Buffered channel for task queue (capacity: 100)
-	timers  map[string]*time.Timer  // Map of timer IDs to Go timers
-	ctx     context.Context         // Context for cancellation
-	cancel  context.CancelFunc      // Function to cancel the context
-	wg      sync.WaitGroup          // Tracks pending tasks for graceful shutdown
-	mu      sync.RWMutex            // Protects timers map and running flag
-	running bool                    // Indicates if the loop is currently running
+	tasks     chan *Task              // Buffered channel for task queue (capacity: 100)
+	timers    map[string]*time.Timer  // Map of timer IDs to Go timers
+	ctx       context.Context         // Context for cancellation
+	cancel    context.CancelFunc      // Function to cancel the context
+	wg        sync.WaitGroup          // Tracks pending tasks for graceful shutdown
+	mu        sync.RWMutex            // Protects timers map and running flag
+	execMu    sync.Mutex              // Ensures sequential execution of tasks
+	running   bool                    // Indicates if the loop is currently running
 }
 
 // NewLoop creates and initializes a new event loop.
@@ -229,11 +230,17 @@ func (l *Loop) ClearTimer(id string) {
 	}
 }
 
-// executeTask runs a task's callback in a separate goroutine.
-// The task is marked as complete (WaitGroup) when the callback returns.
+// executeTask executes a task's callback synchronously in the event loop goroutine.
+// This ensures true FIFO (First-In-First-Out) execution order, which is critical
+// for Promise resolution order and other async operations.
+//
+// All tasks are executed sequentially in the order they were queued, preventing
+// race conditions and ensuring deterministic behavior.
+//
+// Note: Goja is NOT thread-safe, so all VM operations must happen in a single goroutine.
+// By executing tasks synchronously here (in the event loop's goroutine), we ensure
+// the VM is only accessed from one goroutine at a time.
 func (l *Loop) executeTask(task *Task) {
-	go func() {
-		defer l.wg.Done()
-		task.Callback()
-	}()
+	defer l.wg.Done()
+	task.Callback()
 }

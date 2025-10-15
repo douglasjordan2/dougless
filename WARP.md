@@ -168,7 +168,7 @@ Tasks can be scheduled with delays (timers) or executed immediately. The loop co
 - ✅ Phase 2: File System & Modules - COMPLETE  
 - ✅ Phase 3: Networking & HTTP - COMPLETE
 - ✅ Phase 4: Security & Permissions - COMPLETE
-- ⏳ Phase 5: Promises & ES6+ - **PARTIAL** (Promise.any/allSettled TODO)
+- ✅ Phase 5: Promises & ES6+ - **COMPLETE** (Oct 15, 2024)
 - ✅ Phase 6: WebSockets & Real-time - COMPLETE
 
 ### Phase 1 (Foundation) - COMPLETE ✅
@@ -248,14 +248,17 @@ Tasks can be scheduled with delays (timers) or executed immediately. The loop co
 - ✅ Broadcasting to multiple clients
 - ✅ Working examples: websocket_simple.js, websocket_server.js, websocket_chat.js
 
-### Currently Working: Phase 5 Completion (Promises)
-**Status:** Partial implementation
+### Phase 5 Complete! ✅ (October 15, 2024)
+**Status:** ALL features implemented and tested
 - ✅ Promise constructor and basic operations
 - ✅ Promise.resolve() and Promise.reject()
 - ✅ Promise.all() - fully implemented and tested
 - ✅ Promise.race() - fully implemented and tested
-- ⏳ **TODO:** Promise.allSettled() - mentioned in docs but NOT implemented
-- ⏳ **TODO:** Promise.any() - mentioned in docs but NOT implemented
+- ✅ Promise.allSettled() - **NEWLY IMPLEMENTED** (Oct 15, 2024)
+- ✅ Promise.any() - fully implemented and tested
+- ✅ ES6+ transpilation with esbuild
+- ✅ Full test coverage for all Promise methods
+- ✅ Example files demonstrating all features
 
 ## Key Implementation Files
 
@@ -297,7 +300,7 @@ The project follows a multi-phase development plan:
 2. File System & Modules ✅
 3. Networking & HTTP ✅
 4. Security & Permissions ✅
-5. Promises & ES6+ ⏳ (Partial - see Task 1.5 in TODO.md)
+5. Promises & ES6+ ✅ (COMPLETE - Oct 15, 2024)
 6. WebSockets & Real-time ✅
 7. Crypto & Security (Next)
 8. Process & System Integration

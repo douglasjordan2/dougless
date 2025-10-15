@@ -7,7 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Recent Updates - October 14, 2024
+### Recent Updates - October 15, 2024
+
+#### Completed - Phase 5 (Promises & ES6+) ✅
+- **Promise.allSettled() Implementation**
+  - ES2020-compliant `Promise.allSettled()` static method
+  - Always resolves (never rejects), even when all promises reject
+  - Returns array of result objects with `status` and `value`/`reason` properties
+  - Handles mixed fulfilled and rejected promises
+  - Properly handles non-promise values (wraps as fulfilled)
+  - Waits for all promises to settle regardless of outcome
+  - Full test coverage with 7 comprehensive tests
+  - Example file: `examples/test-promise-allsettled.js`
+
+- **Promise.any() Validation**
+  - Already implemented and working (ES2021 feature)
+  - Returns first fulfilled promise, ignoring rejections
+  - Throws AggregateError when all promises reject
+  - Properly handles non-promise values
+  - Example file: `examples/test-promise-any.js`
+  - **Phase 5 is now 100% COMPLETE** ✅
+
+#### Fixed
+- **Promise Reuse Bug**
+  - Fixed panic when reusing settled promise instances
+  - Test examples updated to create fresh promise arrays
+  - Error: "slice bounds out of range [:-1]" resolved
+
+### Previous Updates - October 14, 2024
 
 #### Enhanced
 - **Source Map Support**

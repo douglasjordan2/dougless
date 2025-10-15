@@ -877,3 +877,189 @@ func TestPromiseAllSettledWithMixedTimings(t *testing.T) {
 		t.Errorf("Third promise result incorrect")
 	}
 }
+
+func TestPromiseAnyFirstFulfilled(t *testing.T) {
+	vm, loop := setupTestEnvironment()
+	defer loop.Stop()
+
+	script := `
+		var result = null;
+		Promise.any([
+			Promise.reject("error 1"),
+			Promise.resolve("success")
+		]).then(function(val) {
+			result = val;
+		});
+	`
+
+	_, err := vm.RunString(script)
+	if err != nil {
+		t.Fatalf("Script execution failed: %v", err)
+	}
+
+	time.Sleep(50 * time.Millisecond)
+	loop.Wait()
+
+	result := vm.Get("result")
+	if result.String() != "success" {
+		t.Errorf("Expected 'success', got '%s'", result.String())
+	}
+}
+
+func TestPromiseAnyAllRejected(t *testing.T) {
+	vm, loop := setupTestEnvironment()
+	defer loop.Stop()
+
+	script := `
+		var error = null;
+		Promise.any([
+			Promise.reject("error 1"),
+			Promise.reject("error 2"),
+			Promise.reject("error 3")
+		]).catch(function(err) {
+			error = err;
+		});
+	`
+
+	_, err := vm.RunString(script)
+	if err != nil {
+		t.Fatalf("Script execution failed: %v", err)
+	}
+
+	time.Sleep(50 * time.Millisecond)
+	loop.Wait()
+
+	result := vm.Get("error")
+	if result.ExportType() == nil {
+		t.Fatal("Error is nil")
+	}
+
+	errObj := result.ToObject(vm)
+	if errObj.Get("name").String() != "AggregateError" {
+		t.Errorf("Expected AggregateError, got '%s'", errObj.Get("name").String())
+	}
+}
+
+func TestPromiseAnyEmpty(t *testing.T) {
+	vm, loop := setupTestEnvironment()
+	defer loop.Stop()
+
+	script := `
+		var error = null;
+		Promise.any([]).catch(function(err) {
+			error = err;
+		});
+	`
+
+	_, err := vm.RunString(script)
+	if err != nil {
+		t.Fatalf("Script execution failed: %v", err)
+	}
+
+	time.Sleep(50 * time.Millisecond)
+	loop.Wait()
+
+	result := vm.Get("error")
+	errObj := result.ToObject(vm)
+	if errObj.Get("name").String() != "AggregateError" {
+		t.Errorf("Expected AggregateError for empty array, got '%s'", errObj.Get("name").String())
+	}
+}
+
+func TestPromiseAnyWithNonPromises(t *testing.T) {
+	vm, loop := setupTestEnvironment()
+	defer loop.Stop()
+
+	script := `
+		var result = null;
+		Promise.any([
+			Promise.reject("error"),
+			42,
+			Promise.resolve("too late")
+		]).then(function(val) {
+			result = val;
+		});
+	`
+
+	_, err := vm.RunString(script)
+	if err != nil {
+		t.Fatalf("Script execution failed: %v", err)
+	}
+
+	time.Sleep(50 * time.Millisecond)
+	loop.Wait()
+
+	result := vm.Get("result")
+	if result.ToInteger() != 42 {
+		t.Errorf("Expected 42, got %d", result.ToInteger())
+	}
+}
+
+func TestPromiseAnyMixedTiming(t *testing.T) {
+	vm, loop := setupTestEnvironment()
+	defer loop.Stop()
+
+	timers := NewTimers(loop)
+	timerObj := timers.Export(vm).ToObject(vm)
+	vm.Set("setTimeout", timerObj.Get("setTimeout"))
+
+	script := `
+		var result = null;
+		Promise.any([
+			new Promise(function(resolve, reject) {
+				setTimeout(function() { reject("error"); }, 200);
+			}),
+			new Promise(function(resolve) {
+				setTimeout(function() { resolve("fast success"); }, 100);
+			}),
+			new Promise(function(resolve) {
+				setTimeout(function() { resolve("slow success"); }, 300);
+			})
+		]).then(function(val) {
+			result = val;
+		});
+	`
+
+	_, err := vm.RunString(script)
+	if err != nil {
+		t.Fatalf("Script execution failed: %v", err)
+	}
+
+	time.Sleep(400 * time.Millisecond)
+	loop.Wait()
+
+	result := vm.Get("result")
+	if result.String() != "fast success" {
+		t.Errorf("Expected 'fast success', got '%s'", result.String())
+	}
+}
+
+func TestPromiseAnyIgnoresRejections(t *testing.T) {
+	vm, loop := setupTestEnvironment()
+	defer loop.Stop()
+
+	script := `
+		var result = null;
+		Promise.any([
+			Promise.reject("error 1"),
+			Promise.reject("error 2"),
+			Promise.resolve("the one success"),
+			Promise.reject("error 3")
+		]).then(function(val) {
+			result = val;
+		});
+	`
+
+	_, err := vm.RunString(script)
+	if err != nil {
+		t.Fatalf("Script execution failed: %v", err)
+	}
+
+	time.Sleep(50 * time.Millisecond)
+	loop.Wait()
+
+	result := vm.Get("result")
+	if result.String() != "the one success" {
+		t.Errorf("Expected 'the one success', got '%s'", result.String())
+	}
+}
