@@ -1,3 +1,6 @@
+//go:build ignore
+// +build ignore
+
 package main
 
 import (
@@ -49,7 +52,7 @@ func main() {
 	// Transpile to ES5 (strict old-school)
 	resultES5 := api.Transform(source, api.TransformOptions{
 		Loader:     api.LoaderJS,
-		Target:     api.ES5,  // Pure ES5!
+		Target:     api.ES5, // Pure ES5!
 		Sourcefile: "example.js",
 		Format:     api.FormatDefault,
 		Sourcemap:  api.SourceMapNone,
@@ -62,7 +65,7 @@ func main() {
 		}
 	} else {
 		transpiledES5 := string(resultES5.Code)
-		
+
 		fmt.Println("╔════════════════════════════════════════════════════════════════════╗")
 		fmt.Println("║              TRANSPILED TO ES5 (Pure Old-School JS)                ║")
 		fmt.Println("╚════════════════════════════════════════════════════════════════════╝")
@@ -74,7 +77,7 @@ func main() {
 	// Transpile to ES2017 (what Dougless uses)
 	resultES2017 := api.Transform(source, api.TransformOptions{
 		Loader:     api.LoaderJS,
-		Target:     api.ES2017,  // Modern ES2017
+		Target:     api.ES2017, // Modern ES2017
 		Sourcefile: "example.js",
 		Format:     api.FormatDefault,
 		Sourcemap:  api.SourceMapInline,
@@ -87,18 +90,18 @@ func main() {
 		}
 	} else {
 		transpiledES2017 := string(resultES2017.Code)
-		
+
 		// Remove source map for display
 		if idx := strings.Index(transpiledES2017, "//# sourceMappingURL="); idx != -1 {
 			sourceMapComment := transpiledES2017[idx:]
 			transpiledES2017 = transpiledES2017[:idx]
-			
+
 			fmt.Println("╔════════════════════════════════════════════════════════════════════╗")
 			fmt.Println("║         TRANSPILED TO ES2017 (What Dougless Actually Uses)        ║")
 			fmt.Println("╚════════════════════════════════════════════════════════════════════╝")
 			fmt.Println()
 			fmt.Println(transpiledES2017)
-			
+
 			fmt.Println("╔════════════════════════════════════════════════════════════════════╗")
 			fmt.Println("║                    SOURCE MAP (First 200 chars)                    ║")
 			fmt.Println("╚════════════════════════════════════════════════════════════════════╝")

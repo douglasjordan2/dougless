@@ -1,3 +1,6 @@
+//go:build ignore
+// +build ignore
+
 package main
 
 import (
@@ -63,12 +66,12 @@ func main() {
 	}
 
 	transpiled := string(result.Code)
-	
+
 	// Remove the source map comment for cleaner display
 	if idx := strings.Index(transpiled, "//# sourceMappingURL="); idx != -1 {
 		sourceMapComment := transpiled[idx:]
 		transpiled = transpiled[:idx]
-		
+
 		// Show source map separately
 		fmt.Println("╔════════════════════════════════════════════════════════════════════╗")
 		fmt.Println("║                    SOURCE MAP INFORMATION                          ║")
@@ -85,13 +88,13 @@ func main() {
 	fmt.Println()
 	fmt.Println(source)
 	fmt.Println()
-	
+
 	fmt.Println("╔════════════════════════════════════════════════════════════════════╗")
 	fmt.Println("║            TRANSPILED ES5 CODE (What Goja Executes)               ║")
 	fmt.Println("╚════════════════════════════════════════════════════════════════════╝")
 	fmt.Println()
 	fmt.Println(transpiled)
-	
+
 	fmt.Println("╔════════════════════════════════════════════════════════════════════╗")
 	fmt.Println("║                          KEY CHANGES                               ║")
 	fmt.Println("╚════════════════════════════════════════════════════════════════════╝")

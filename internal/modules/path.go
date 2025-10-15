@@ -1,10 +1,10 @@
 package modules
 
 import (
-  "path/filepath"
-  "strings"
+	"path/filepath"
+	"strings"
 
-  "github.com/dop251/goja"
+	"github.com/dop251/goja"
 )
 
 // Path provides file path manipulation utilities for JavaScript.
@@ -18,37 +18,37 @@ import (
 //	path.dirname('/home/user/file.txt')  // '/home/user'
 //	path.extname('file.txt')  // '.txt'
 type Path struct {
-  vm *goja.Runtime  // JavaScript runtime instance
+	vm *goja.Runtime // JavaScript runtime instance
 }
 
 // NewPath creates a new Path module instance.
 func NewPath() *Path {
-  return &Path{}
+	return &Path{}
 }
 
 // Export creates and returns the path JavaScript object with all path methods.
 func (p *Path) Export(vm *goja.Runtime) goja.Value {
-  p.vm = vm
-  obj := vm.NewObject()
+	p.vm = vm
+	obj := vm.NewObject()
 
-  obj.Set("join", p.join)
-  obj.Set("resolve", p.resolve)
-  obj.Set("dirname", p.dirname)
-  obj.Set("basename", p.basename)
-  obj.Set("extname", p.extname)
-  obj.Set("sep", filepath.Separator)
+	obj.Set("join", p.join)
+	obj.Set("resolve", p.resolve)
+	obj.Set("dirname", p.dirname)
+	obj.Set("basename", p.basename)
+	obj.Set("extname", p.extname)
+	obj.Set("sep", filepath.Separator)
 
-  return obj
+	return obj
 }
 
 // argToStr converts all function call arguments to strings.
 // Helper function used by path methods that accept multiple string arguments.
 func argToStr(call goja.FunctionCall) []string {
-  parts := make([]string, len(call.Arguments))
-  for i, arg := range call.Arguments {
-    parts[i] = arg.String()
-  }
-  return parts
+	parts := make([]string, len(call.Arguments))
+	for i, arg := range call.Arguments {
+		parts[i] = arg.String()
+	}
+	return parts
 }
 
 // join implements path.join() - joins path segments using the OS path separator.
@@ -58,10 +58,10 @@ func argToStr(call goja.FunctionCall) []string {
 //	path.join('foo', 'bar', 'baz')  // 'foo/bar/baz' on Unix
 //	path.join('/usr', 'local', 'bin')  // '/usr/local/bin'
 func (p *Path) join(call goja.FunctionCall) goja.Value {
-  parts := argToStr(call)
-  result := filepath.Join(parts...)
+	parts := argToStr(call)
+	result := filepath.Join(parts...)
 
-  return p.vm.ToValue(result)
+	return p.vm.ToValue(result)
 }
 
 // resolve implements path.resolve() - resolves path segments to an absolute path.
@@ -74,16 +74,16 @@ func (p *Path) join(call goja.FunctionCall) goja.Value {
 //
 // Panics if the path cannot be resolved to an absolute path.
 func (p *Path) resolve(call goja.FunctionCall) goja.Value {
-  parts := argToStr(call)
-  joined := filepath.Join(parts...)
+	parts := argToStr(call)
+	joined := filepath.Join(parts...)
 
-  // convert to absolute path
-  absolute, err := filepath.Abs(joined)
-  if err != nil {
-    panic(p.vm.NewGoError(err))
-  }
+	// convert to absolute path
+	absolute, err := filepath.Abs(joined)
+	if err != nil {
+		panic(p.vm.NewGoError(err))
+	}
 
-  return p.vm.ToValue(absolute)
+	return p.vm.ToValue(absolute)
 }
 
 // dirname implements path.dirname() - returns the directory portion of a path.
@@ -96,14 +96,14 @@ func (p *Path) resolve(call goja.FunctionCall) goja.Value {
 //
 // Returns an empty string if no path argument is provided.
 func (p *Path) dirname(call goja.FunctionCall) goja.Value {
-  if len(call.Arguments) < 1 {
-    return p.vm.ToValue("")
-  }
+	if len(call.Arguments) < 1 {
+		return p.vm.ToValue("")
+	}
 
-  path := call.Arguments[0].String()
-  dir := filepath.Dir(path)
+	path := call.Arguments[0].String()
+	dir := filepath.Dir(path)
 
-  return p.vm.ToValue(dir)
+	return p.vm.ToValue(dir)
 }
 
 // basename implements path.basename() - returns the last element of a path.
@@ -116,19 +116,19 @@ func (p *Path) dirname(call goja.FunctionCall) goja.Value {
 //
 // Returns an empty string if no path argument is provided.
 func (p *Path) basename(call goja.FunctionCall) goja.Value {
-  if len(call.Arguments) < 1 {
-    return p.vm.ToValue("")
-  }
+	if len(call.Arguments) < 1 {
+		return p.vm.ToValue("")
+	}
 
-  path := call.Arguments[0].String()
+	path := call.Arguments[0].String()
 
-  if len(call.Arguments) >= 2 {
-    ext := call.Arguments[1].String()
-    base := filepath.Base(path)
-    return p.vm.ToValue(strings.TrimSuffix(base, ext))
-  }
+	if len(call.Arguments) >= 2 {
+		ext := call.Arguments[1].String()
+		base := filepath.Base(path)
+		return p.vm.ToValue(strings.TrimSuffix(base, ext))
+	}
 
-  return p.vm.ToValue(filepath.Base(path))
+	return p.vm.ToValue(filepath.Base(path))
 }
 
 // extname implements path.extname() - returns the file extension including the dot.
@@ -141,12 +141,12 @@ func (p *Path) basename(call goja.FunctionCall) goja.Value {
 //
 // Returns an empty string if there's no extension or no path argument is provided.
 func (p *Path) extname(call goja.FunctionCall) goja.Value {
-  if len(call.Arguments) < 1 {
-    return p.vm.ToValue("")
-  }
+	if len(call.Arguments) < 1 {
+		return p.vm.ToValue("")
+	}
 
-  path := call.Arguments[0].String()
-  ext := filepath.Ext(path)
+	path := call.Arguments[0].String()
+	ext := filepath.Ext(path)
 
-  return p.vm.ToValue(ext)
+	return p.vm.ToValue(ext)
 }

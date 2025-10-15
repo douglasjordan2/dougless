@@ -20,11 +20,11 @@ package runtime
 import (
 	"fmt"
 	"os"
+	"sync"
 	"time"
-  "sync"
 
 	"github.com/dop251/goja"
-  "github.com/evanw/esbuild/pkg/api"
+	"github.com/evanw/esbuild/pkg/api"
 
 	"github.com/douglasjordan2/dougless/internal/event"
 	"github.com/douglasjordan2/dougless/internal/modules"
@@ -34,11 +34,11 @@ import (
 // It coordinates the Goja VM, event loop, and module system to provide
 // a complete JavaScript runtime with async capabilities.
 type Runtime struct {
-	vm           *goja.Runtime      // Goja JavaScript VM (ES5.1)
-	eventLoop    *event.Loop        // Event loop for async operations
-	modules      *modules.Registry  // Registry of loadable modules
-  timers       map[string]time.Time  // Timer tracking for console.time()
-  timersMu     sync.Mutex         // Protects timers map
+	vm        *goja.Runtime        // Goja JavaScript VM (ES5.1)
+	eventLoop *event.Loop          // Event loop for async operations
+	modules   *modules.Registry    // Registry of loadable modules
+	timers    map[string]time.Time // Timer tracking for console.time()
+	timersMu  sync.Mutex           // Protects timers map
 }
 
 // New creates and initializes a new Runtime instance.
@@ -61,7 +61,7 @@ func New() *Runtime {
 		vm:        vm,
 		eventLoop: eventLoop,
 		modules:   moduleRegistry,
-    timers:    make(map[string]time.Time),
+		timers:    make(map[string]time.Time),
 	}
 
 	rt.initializeGlobals()
@@ -132,17 +132,17 @@ func (rt *Runtime) transpile(source, filename string) (string, error) {
 	}
 
 	result := api.Transform(source, api.TransformOptions{
-		Loader:      api.LoaderJS,
-		Target:      api.ES2017,
-		Sourcefile:  filename,
-		Format:      api.FormatDefault,
-		Sourcemap:   sourcemap,
+		Loader:     api.LoaderJS,
+		Target:     api.ES2017,
+		Sourcefile: filename,
+		Format:     api.FormatDefault,
+		Sourcemap:  sourcemap,
 	})
 
 	if len(result.Errors) > 0 {
 		// Return the first error with details
 		err := result.Errors[0]
-		return "", fmt.Errorf("%s:%d:%d: %s", 
+		return "", fmt.Errorf("%s:%d:%d: %s",
 			err.Location.File,
 			err.Location.Line,
 			err.Location.Column,
@@ -180,30 +180,30 @@ func (rt *Runtime) initializeGlobals() {
 	rt.vm.Set("console", console.Export(rt.vm))
 
 	// Timers
-  timers := modules.NewTimers(rt.eventLoop)
-  timerObj := timers.Export(rt.vm).ToObject(rt.vm)
-  rt.vm.Set("setTimeout", timerObj.Get("setTimeout"))
-  rt.vm.Set("setInterval", timerObj.Get("setInterval"))
-  rt.vm.Set("clearTimeout", timerObj.Get("clearTimeout"))
-  rt.vm.Set("clearInterval", timerObj.Get("clearInterval"))
+	timers := modules.NewTimers(rt.eventLoop)
+	timerObj := timers.Export(rt.vm).ToObject(rt.vm)
+	rt.vm.Set("setTimeout", timerObj.Get("setTimeout"))
+	rt.vm.Set("setInterval", timerObj.Get("setInterval"))
+	rt.vm.Set("clearTimeout", timerObj.Get("clearTimeout"))
+	rt.vm.Set("clearInterval", timerObj.Get("clearInterval"))
 
-  // Path
-  path := modules.NewPath()
-  rt.vm.Set("path", path.Export(rt.vm))
+	// Path
+	path := modules.NewPath()
+	rt.vm.Set("path", path.Export(rt.vm))
 
 	// File system
 	fileSystem := modules.NewFileSystem(rt.eventLoop)
 	rt.vm.Set("file", fileSystem.Export(rt.vm))
 
-  // HTTP
-  httpClient := modules.NewHTTP(rt.eventLoop)
-  rt.vm.Set("http", httpClient.Export(rt.vm))
+	// HTTP
+	httpClient := modules.NewHTTP(rt.eventLoop)
+	rt.vm.Set("http", httpClient.Export(rt.vm))
 
-  // Promise
-  modules.SetupPromise(rt.vm, rt.eventLoop)
+	// Promise
+	modules.SetupPromise(rt.vm, rt.eventLoop)
 
-  // require() function for module loading
-  rt.vm.Set("require", rt.requireFunction)
+	// require() function for module loading
+	rt.vm.Set("require", rt.requireFunction)
 }
 
 // initializeModules registers built-in modules that can be loaded via require().
@@ -234,7 +234,7 @@ func (rt *Runtime) requireFunction(call goja.FunctionCall) goja.Value {
 
 	moduleName := call.Arguments[0].String()
 	module := rt.modules.Get(moduleName)
-	
+
 	if module == nil {
 		panic(rt.vm.NewGoError(fmt.Errorf("Cannot find module '%s'", moduleName)))
 	}
@@ -252,5 +252,5 @@ func (rt *Runtime) requireFunction(call goja.FunctionCall) goja.Value {
 //
 // Returns the result value and any error that occurred during execution.
 func (r *Runtime) Evaluate(code string) (goja.Value, error) {
-  return r.vm.RunString(code)
+	return r.vm.RunString(code)
 }

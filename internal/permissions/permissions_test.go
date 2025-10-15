@@ -7,11 +7,11 @@ import (
 
 func TestNewManager(t *testing.T) {
 	manager := NewManager()
-	
+
 	if manager == nil {
 		t.Fatal("NewManager() returned nil")
 	}
-	
+
 	// All permissions should be nil (denied) by default
 	if manager.allowRead != nil {
 		t.Error("allowRead should be nil by default")
@@ -29,7 +29,7 @@ func TestNewManager(t *testing.T) {
 func TestGrantAll(t *testing.T) {
 	manager := NewManager()
 	manager.GrantAll()
-	
+
 	// All permissions should be granted to everything
 	if manager.allowRead == nil || len(*manager.allowRead) != 0 {
 		t.Error("allowRead should be empty slice (allow all)")
@@ -44,11 +44,11 @@ func TestGrantAll(t *testing.T) {
 
 func TestGrantSpecificPermissions(t *testing.T) {
 	manager := NewManager()
-	
+
 	t.Run("grant specific read paths", func(t *testing.T) {
 		paths := []string{"/tmp", "/home/user"}
 		manager.GrantRead(paths)
-		
+
 		if manager.allowRead == nil {
 			t.Fatal("allowRead should not be nil after grant")
 		}
@@ -56,10 +56,10 @@ func TestGrantSpecificPermissions(t *testing.T) {
 			t.Errorf("expected 2 paths, got %d", len(*manager.allowRead))
 		}
 	})
-	
+
 	t.Run("grant all read access", func(t *testing.T) {
 		manager.GrantRead([]string{})
-		
+
 		if manager.allowRead == nil {
 			t.Fatal("allowRead should not be nil")
 		}
@@ -71,7 +71,7 @@ func TestGrantSpecificPermissions(t *testing.T) {
 
 func TestCheckPermissionDenied(t *testing.T) {
 	manager := NewManager()
-	
+
 	// No permissions granted - everything should be denied
 	tests := []struct {
 		name     string
@@ -84,7 +84,7 @@ func TestCheckPermissionDenied(t *testing.T) {
 		{"env var", PermissionEnv, "PATH"},
 		{"run program", PermissionRun, "ls"},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if manager.Check(tt.perm, tt.resource) {
@@ -97,7 +97,7 @@ func TestCheckPermissionDenied(t *testing.T) {
 func TestCheckPermissionGrantedAll(t *testing.T) {
 	manager := NewManager()
 	manager.GrantAll()
-	
+
 	// Everything should be allowed
 	tests := []struct {
 		name     string
@@ -108,7 +108,7 @@ func TestCheckPermissionGrantedAll(t *testing.T) {
 		{"write file", PermissionWrite, "/tmp/test.txt"},
 		{"network", PermissionNet, "example.com"},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if !manager.Check(tt.perm, tt.resource) {
@@ -120,10 +120,10 @@ func TestCheckPermissionGrantedAll(t *testing.T) {
 
 func TestCheckPermissionGrantedSpecific(t *testing.T) {
 	manager := NewManager()
-	
+
 	t.Run("read specific paths", func(t *testing.T) {
 		manager.GrantRead([]string{"/tmp"})
-		
+
 		// Should allow /tmp and subdirectories
 		if !manager.Check(PermissionRead, "/tmp/test.txt") {
 			t.Error("/tmp/test.txt should be allowed")
@@ -131,7 +131,7 @@ func TestCheckPermissionGrantedSpecific(t *testing.T) {
 		if !manager.Check(PermissionRead, "/tmp/subdir/file.txt") {
 			t.Error("/tmp/subdir/file.txt should be allowed")
 		}
-		
+
 		// Should deny other paths
 		if manager.Check(PermissionRead, "/etc/passwd") {
 			t.Error("/etc/passwd should be denied")
@@ -140,10 +140,10 @@ func TestCheckPermissionGrantedSpecific(t *testing.T) {
 			t.Error("/home/user/file.txt should be denied")
 		}
 	})
-	
+
 	t.Run("multiple read paths", func(t *testing.T) {
 		manager.GrantRead([]string{"/tmp", "/home/user"})
-		
+
 		if !manager.Check(PermissionRead, "/tmp/test.txt") {
 			t.Error("/tmp/test.txt should be allowed")
 		}
@@ -154,10 +154,10 @@ func TestCheckPermissionGrantedSpecific(t *testing.T) {
 			t.Error("/etc/passwd should be denied")
 		}
 	})
-	
+
 	t.Run("write specific paths", func(t *testing.T) {
 		manager.GrantWrite([]string{"/tmp"})
-		
+
 		if !manager.Check(PermissionWrite, "/tmp/output.txt") {
 			t.Error("/tmp/output.txt should be allowed")
 		}
@@ -181,12 +181,12 @@ func TestMatchPath(t *testing.T) {
 		{"parent directory escape attempt", "/tmp", "/tmp/../etc/passwd", false},
 		{"relative path allowed", "/tmp", "tmp/test.txt", false},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := matchPath(tt.allowedPath, tt.requestedPath)
 			if result != tt.shouldMatch {
-				t.Errorf("matchPath(%q, %q) = %v, want %v", 
+				t.Errorf("matchPath(%q, %q) = %v, want %v",
 					tt.allowedPath, tt.requestedPath, result, tt.shouldMatch)
 			}
 		})
@@ -197,14 +197,14 @@ func TestMatchPathTraversalPrevention(t *testing.T) {
 	// Test that path traversal attacks are blocked
 	manager := NewManager()
 	manager.GrantRead([]string{"/tmp"})
-	
+
 	// These should all be blocked
 	traversalAttempts := []string{
 		"/tmp/../etc/passwd",
 		"/tmp/../../root/.ssh/id_rsa",
 		"/tmp/./../etc/shadow",
 	}
-	
+
 	for _, attempt := range traversalAttempts {
 		if manager.Check(PermissionRead, attempt) {
 			t.Errorf("traversal attempt should be blocked: %s", attempt)
@@ -230,7 +230,7 @@ func TestMatchHost(t *testing.T) {
 		{"custom port match", "example.com:8080", "example.com:8080", true},
 		{"custom port mismatch", "example.com:8080", "example.com:3000", false},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := matchHost(tt.allowedHost, tt.requestedHost)
@@ -253,7 +253,7 @@ func TestMatchExact(t *testing.T) {
 		{"API_KEY", "API_KEY", true},
 		{"", "", true},
 	}
-	
+
 	for _, tt := range tests {
 		result := matchExact(tt.allowed, tt.requested)
 		if result != tt.expected {
@@ -272,13 +272,13 @@ func TestQuery(t *testing.T) {
 			Name:     PermissionRead,
 			Resource: "/etc/passwd",
 		}
-		
+
 		state := manager.Query(desc)
 		if state != StateDenied {
 			t.Errorf("expected StateDenied, got %v", state)
 		}
 	})
-	
+
 	t.Run("granted when allowed", func(t *testing.T) {
 		manager := NewManager()
 		manager.GrantRead([]string{"/tmp"})
@@ -286,13 +286,13 @@ func TestQuery(t *testing.T) {
 			Name:     PermissionRead,
 			Resource: "/tmp/file.txt",
 		}
-		
+
 		state := manager.Query(desc)
 		if state != StateGranted {
 			t.Errorf("expected StateGranted, got %v", state)
 		}
 	})
-	
+
 	t.Run("prompt mode", func(t *testing.T) {
 		manager := NewManager()
 		manager.SetPromptMode(true)
@@ -300,7 +300,7 @@ func TestQuery(t *testing.T) {
 			Name:     PermissionRead,
 			Resource: "/etc/passwd",
 		}
-		
+
 		state := manager.Query(desc)
 		if state != StatePrompt {
 			t.Errorf("expected StatePrompt, got %v", state)
@@ -326,7 +326,7 @@ func TestPermissionDescriptorString(t *testing.T) {
 			"net access to 'example.com'",
 		},
 	}
-	
+
 	for _, tt := range tests {
 		result := tt.desc.String()
 		if result != tt.expected {
@@ -337,10 +337,10 @@ func TestPermissionDescriptorString(t *testing.T) {
 
 func TestErrorMessage(t *testing.T) {
 	manager := NewManager()
-	
+
 	t.Run("read permission error", func(t *testing.T) {
 		msg := manager.ErrorMessage(PermissionRead, "/etc/passwd")
-		
+
 		// Check that error message contains key information
 		if msg == "" {
 			t.Error("error message should not be empty")
@@ -350,10 +350,10 @@ func TestErrorMessage(t *testing.T) {
 			t.Error("error message seems too short")
 		}
 	})
-	
+
 	t.Run("net permission error", func(t *testing.T) {
 		msg := manager.ErrorMessage(PermissionNet, "example.com")
-		
+
 		if msg == "" {
 			t.Error("error message should not be empty")
 		}
@@ -366,11 +366,11 @@ func TestGlobalManager(t *testing.T) {
 	defer func() {
 		globalManager = originalManager
 	}()
-	
+
 	t.Run("GetManager creates default", func(t *testing.T) {
 		globalManager = nil
 		manager := GetManager()
-		
+
 		if manager == nil {
 			t.Fatal("GetManager should create a default manager")
 		}
@@ -378,12 +378,12 @@ func TestGlobalManager(t *testing.T) {
 			t.Error("default manager should have nil allowRead")
 		}
 	})
-	
+
 	t.Run("SetGlobalManager and GetManager", func(t *testing.T) {
 		custom := NewManager()
 		custom.GrantAll()
 		SetGlobalManager(custom)
-		
+
 		retrieved := GetManager()
 		if retrieved != custom {
 			t.Error("GetManager should return the set manager")
@@ -396,11 +396,11 @@ func TestGlobalManager(t *testing.T) {
 
 func TestRealWorldPaths(t *testing.T) {
 	manager := NewManager()
-	
+
 	// Get actual temp dir
 	tmpDir := filepath.Clean("/tmp")
 	manager.GrantRead([]string{tmpDir})
-	
+
 	// Test with real path
 	testPath := filepath.Join(tmpDir, "test.txt")
 	if !manager.Check(PermissionRead, testPath) {

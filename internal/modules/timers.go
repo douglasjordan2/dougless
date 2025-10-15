@@ -1,7 +1,7 @@
 package modules
 
 import (
-  "fmt"
+	"fmt"
 	"time"
 
 	"github.com/dop251/goja"
@@ -15,28 +15,28 @@ import (
 //
 // Available globally in JavaScript as setTimeout(), setInterval(), clearTimeout(), and clearInterval().
 type Timers struct {
-  vm *goja.Runtime   // JavaScript runtime instance
-	eventLoop    *event.Loop  // Event loop for async task scheduling
+	vm        *goja.Runtime // JavaScript runtime instance
+	eventLoop *event.Loop   // Event loop for async task scheduling
 }
 
 // NewTimers creates a new Timers instance with the given event loop.
 func NewTimers(eventLoop *event.Loop) *Timers {
-  return &Timers{
+	return &Timers{
 		eventLoop: eventLoop,
-  }
+	}
 }
 
 // Export creates and returns the timers JavaScript object with all timer methods.
 func (t *Timers) Export(vm *goja.Runtime) goja.Value {
-  t.vm = vm
-  obj := vm.NewObject()
+	t.vm = vm
+	obj := vm.NewObject()
 
 	obj.Set("setTimeout", t.setTimeout)
 	obj.Set("setInterval", t.setInterval)
 	obj.Set("clearTimeout", t.clearTimeout)
 	obj.Set("clearInterval", t.clearInterval)
 
-  return obj
+	return obj
 }
 
 // delayHelper is the shared implementation for setTimeout and setInterval.
@@ -50,38 +50,38 @@ func (t *Timers) Export(vm *goja.Runtime) goja.Value {
 //
 // Returns a unique timer ID string for use with clearTimeout/clearInterval.
 func (t *Timers) delayHelper(call goja.FunctionCall, isInterval bool) goja.Value {
-  if len(call.Arguments) == 0 {
-    panic(t.vm.NewTypeError("setTimeout/setInterval requires a callback function"))
-  }
+	if len(call.Arguments) == 0 {
+		panic(t.vm.NewTypeError("setTimeout/setInterval requires a callback function"))
+	}
 
-  callback, ok := goja.AssertFunction(call.Arguments[0])
-  if !ok {
-    panic(t.vm.NewTypeError("callback must be a function"))
-  }
+	callback, ok := goja.AssertFunction(call.Arguments[0])
+	if !ok {
+		panic(t.vm.NewTypeError("callback must be a function"))
+	}
 
-  cb := func() {
-    _, err := callback(goja.Undefined())
-    if err != nil {
-      fmt.Printf("Timer callback error: %v\n", err)
-    }
-  }
+	cb := func() {
+		_, err := callback(goja.Undefined())
+		if err != nil {
+			fmt.Printf("Timer callback error: %v\n", err)
+		}
+	}
 
-  var delayMs int64 = 0
-  if len(call.Arguments) > 1 {
-    delayMs = call.Arguments[1].ToInteger()
-  }
-  delay := time.Duration(delayMs) * time.Millisecond
+	var delayMs int64 = 0
+	if len(call.Arguments) > 1 {
+		delayMs = call.Arguments[1].ToInteger()
+	}
+	delay := time.Duration(delayMs) * time.Millisecond
 
-  timerID := uuid.New().String()
+	timerID := uuid.New().String()
 
-  task := &event.Task{
-    ID: timerID,
-    Callback: cb,
-    Delay: delay,
-    Interval: isInterval,
-  }
+	task := &event.Task{
+		ID:       timerID,
+		Callback: cb,
+		Delay:    delay,
+		Interval: isInterval,
+	}
 
-  t.eventLoop.ScheduleTask(task)
+	t.eventLoop.ScheduleTask(task)
 
 	return t.vm.ToValue(timerID)
 }
@@ -93,7 +93,7 @@ func (t *Timers) delayHelper(call goja.FunctionCall, isInterval bool) goja.Value
 //
 //	const id = setTimeout(() => console.log('Delayed'), 1000);
 func (t *Timers) setTimeout(call goja.FunctionCall) goja.Value {
-  return t.delayHelper(call, false)
+	return t.delayHelper(call, false)
 }
 
 // setInterval implements setInterval() - repeatedly executes a function at intervals.
@@ -103,19 +103,19 @@ func (t *Timers) setTimeout(call goja.FunctionCall) goja.Value {
 //
 //	const id = setInterval(() => console.log('Tick'), 1000);
 func (t *Timers) setInterval(call goja.FunctionCall) goja.Value {
-  return t.delayHelper(call, true)
+	return t.delayHelper(call, true)
 }
 
 // clearHelper is the shared implementation for clearTimeout and clearInterval.
 // It cancels a scheduled timer by ID. If the timer doesn't exist, this is a no-op.
 func (t *Timers) clearHelper(call goja.FunctionCall) goja.Value {
-  if len(call.Arguments) == 0 {
-    return goja.Undefined()
-  }
+	if len(call.Arguments) == 0 {
+		return goja.Undefined()
+	}
 
-  timerID := call.Arguments[0].String()
+	timerID := call.Arguments[0].String()
 
-  t.eventLoop.ClearTimer(timerID)
+	t.eventLoop.ClearTimer(timerID)
 
 	return goja.Undefined()
 }
@@ -127,7 +127,7 @@ func (t *Timers) clearHelper(call goja.FunctionCall) goja.Value {
 //	const id = setTimeout(() => console.log('Never runs'), 1000);
 //	clearTimeout(id);
 func (t *Timers) clearTimeout(call goja.FunctionCall) goja.Value {
-  return t.clearHelper(call)
+	return t.clearHelper(call)
 }
 
 // clearInterval implements clearInterval() - stops a repeating timer created with setInterval().
@@ -137,5 +137,5 @@ func (t *Timers) clearTimeout(call goja.FunctionCall) goja.Value {
 //	const id = setInterval(() => console.log('Tick'), 1000);
 //	clearInterval(id);  // Stops the interval
 func (t *Timers) clearInterval(call goja.FunctionCall) goja.Value {
-  return t.clearHelper(call)
+	return t.clearHelper(call)
 }

@@ -14,7 +14,7 @@ import (
 // TestCompleteJavaScriptProgram tests a realistic multi-feature JavaScript program
 func TestCompleteJavaScriptProgram(t *testing.T) {
 	rt := runtime.New()
-	
+
 	script := `
 		// ================================================
 		// Integration Test: Full Feature Demonstration
@@ -74,27 +74,27 @@ func TestCompleteJavaScriptProgram(t *testing.T) {
 		console.timeEnd('total-execution');
 		console.log('=== Test Completed ===');
 	`
-	
+
 	// Capture stdout
 	oldStdout := os.Stdout
 	r, w, _ := os.Pipe()
 	os.Stdout = w
-	
+
 	err := rt.Execute(script, "integration_test.js")
-	
+
 	// Restore stdout
 	w.Close()
 	os.Stdout = oldStdout
-	
+
 	// Read captured output
 	var buf bytes.Buffer
 	io.Copy(&buf, r)
 	output := buf.String()
-	
+
 	if err != nil {
 		t.Fatalf("Execute() error = %v\nOutput:\n%s", err, output)
 	}
-	
+
 	// Verify all expected outputs
 	expectedOutputs := []string{
 		"=== Dougless Runtime Integration Test ===",
@@ -112,20 +112,20 @@ func TestCompleteJavaScriptProgram(t *testing.T) {
 		"✓ path module loaded via require",
 		"=== Test Completed ===",
 	}
-	
+
 	for _, expected := range expectedOutputs {
 		if !strings.Contains(output, expected) {
 			t.Errorf("Output missing expected text: %q\nFull output:\n%s", expected, output)
 		}
 	}
-	
+
 	t.Logf("Integration test passed! Output length: %d bytes", len(output))
 }
 
 // TestTimerAccuracy tests the accuracy of setTimeout delays
 func TestTimerAccuracy(t *testing.T) {
 	rt := runtime.New()
-	
+
 	script := `
 		const startTime = Date.now();
 		const measurements = [];
@@ -142,19 +142,19 @@ func TestTimerAccuracy(t *testing.T) {
 			measurements.push(Date.now() - startTime);
 		}, 150);
 	`
-	
+
 	startTime := time.Now()
 	err := rt.Execute(script, "timer_accuracy.js")
 	if err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}
 	elapsed := time.Since(startTime)
-	
+
 	// Should have waited at least 150ms for all timers
 	if elapsed < 150*time.Millisecond {
 		t.Errorf("Timers completed too quickly: %v < 150ms", elapsed)
 	}
-	
+
 	// But not too long (with tolerance)
 	if elapsed > 250*time.Millisecond {
 		t.Errorf("Timers took too long: %v > 250ms", elapsed)
@@ -164,7 +164,7 @@ func TestTimerAccuracy(t *testing.T) {
 // TestConcurrentTimers tests multiple timers running concurrently
 func TestConcurrentTimers(t *testing.T) {
 	rt := runtime.New()
-	
+
 	script := `
 		let completedTimers = 0;
 		const timerResults = [];
@@ -179,12 +179,12 @@ func TestConcurrentTimers(t *testing.T) {
 			})(i);
 		}
 	`
-	
+
 	err := rt.Execute(script, "concurrent_timers.js")
 	if err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}
-	
+
 	// Verify all timers completed
 	// Note: We can't directly check the JS variables from here,
 	// but we can verify the script executed without error
@@ -195,13 +195,13 @@ func TestErrorHandling(t *testing.T) {
 	t.Run("syntax error", func(t *testing.T) {
 		rt := runtime.New()
 		script := `const x = ; // Syntax error`
-		
+
 		err := rt.Execute(script, "syntax_error.js")
 		if err == nil {
 			t.Error("Expected syntax error, got nil")
 		}
 	})
-	
+
 	t.Run("runtime error", func(t *testing.T) {
 		rt := runtime.New()
 		script := `
@@ -210,17 +210,17 @@ func TestErrorHandling(t *testing.T) {
 			}
 			throwError();
 		`
-		
+
 		err := rt.Execute(script, "runtime_error.js")
 		if err == nil {
 			t.Error("Expected runtime error, got nil")
 		}
 	})
-	
+
 	t.Run("undefined variable", func(t *testing.T) {
 		rt := runtime.New()
 		script := `console.log(undefinedVariable);`
-		
+
 		err := rt.Execute(script, "undefined_var.js")
 		if err == nil {
 			t.Error("Expected error for undefined variable, got nil")
@@ -231,12 +231,12 @@ func TestErrorHandling(t *testing.T) {
 // TestConsoleOperationsIntegration tests all console operations together
 func TestConsoleOperationsIntegration(t *testing.T) {
 	rt := runtime.New()
-	
+
 	// Capture stdout
 	oldStdout := os.Stdout
 	r, w, _ := os.Pipe()
 	os.Stdout = w
-	
+
 	script := `
 		console.log('Starting console test');
 		console.warn('This is a warning');
@@ -260,22 +260,22 @@ func TestConsoleOperationsIntegration(t *testing.T) {
 		
 		console.log('Console test completed');
 	`
-	
+
 	err := rt.Execute(script, "console_integration.js")
-	
+
 	// Restore stdout
 	w.Close()
 	os.Stdout = oldStdout
-	
+
 	// Read captured output
 	var buf bytes.Buffer
 	io.Copy(&buf, r)
 	output := buf.String()
-	
+
 	if err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}
-	
+
 	// Verify all console operations produced output
 	checks := map[string]bool{
 		"Starting console test":  false,
@@ -286,13 +286,13 @@ func TestConsoleOperationsIntegration(t *testing.T) {
 		"Object table:":          false,
 		"Console test completed": false,
 	}
-	
+
 	for check := range checks {
 		if strings.Contains(output, check) {
 			checks[check] = true
 		}
 	}
-	
+
 	for check, found := range checks {
 		if !found {
 			t.Errorf("Console output missing: %q", check)
@@ -303,7 +303,7 @@ func TestConsoleOperationsIntegration(t *testing.T) {
 // TestModuleSystemIntegration tests the module system and global APIs
 func TestModuleSystemIntegration(t *testing.T) {
 	rt := runtime.New()
-	
+
 	script := `
 		// Test global file API (unique to Dougless - not via require)
 		if (typeof file !== 'object') {
@@ -336,7 +336,7 @@ func TestModuleSystemIntegration(t *testing.T) {
 		// HTTP module will be added in Phase 3
 		console.log('Module system test passed');
 	`
-	
+
 	err := rt.Execute(script, "module_integration.js")
 	if err != nil {
 		t.Fatalf("Execute() error = %v", err)
@@ -365,12 +365,12 @@ func BenchmarkFullProgram(b *testing.B) {
 			}
 		}, 5);
 	`
-	
+
 	// Redirect stdout to suppress output during benchmark
 	oldStdout := os.Stdout
 	os.Stdout, _ = os.Open(os.DevNull)
 	defer func() { os.Stdout = oldStdout }()
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		rt := runtime.New()

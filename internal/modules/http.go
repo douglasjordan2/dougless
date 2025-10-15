@@ -40,8 +40,8 @@ import (
 //	});
 //	server.listen(3000);
 type HTTP struct {
-	vm        *goja.Runtime  // JavaScript runtime instance
-	eventLoop *event.Loop    // Event loop for async task scheduling
+	vm        *goja.Runtime // JavaScript runtime instance
+	eventLoop *event.Loop   // Event loop for async task scheduling
 }
 
 // NewHTTP creates a new HTTP instance with the given event loop.

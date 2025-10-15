@@ -35,7 +35,7 @@ type Module interface {
 // Registry manages the collection of built-in modules available via require().
 // It provides a simple name-to-module mapping for module resolution.
 type Registry struct {
-	modules map[string]Module  // Map of module names to Module implementations
+	modules map[string]Module // Map of module names to Module implementations
 }
 
 // NewRegistry creates and initializes a new module registry.

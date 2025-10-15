@@ -32,24 +32,24 @@ import (
 
 // Task represents a unit of work to be executed in the event loop.
 type Task struct {
-	ID       string          // Unique identifier for the task (used for timer cancellation)
-	Callback func()          // Function to execute
-	Delay    time.Duration   // Delay before execution (0 for immediate)
-	Interval bool            // If true, task repeats at Delay intervals
+	ID       string        // Unique identifier for the task (used for timer cancellation)
+	Callback func()        // Function to execute
+	Delay    time.Duration // Delay before execution (0 for immediate)
+	Interval bool          // If true, task repeats at Delay intervals
 }
 
 // Loop represents the event loop that processes async tasks.
 // It manages a queue of tasks and scheduled timers, executing them
 // sequentially to maintain FIFO order for immediate tasks.
 type Loop struct {
-	tasks     chan *Task              // Buffered channel for task queue (capacity: 100)
-	timers    map[string]*time.Timer  // Map of timer IDs to Go timers
-	ctx       context.Context         // Context for cancellation
-	cancel    context.CancelFunc      // Function to cancel the context
-	wg        sync.WaitGroup          // Tracks pending tasks for graceful shutdown
-	mu        sync.RWMutex            // Protects timers map and running flag
-	execMu    sync.Mutex              // Ensures sequential execution of tasks
-	running   bool                    // Indicates if the loop is currently running
+	tasks   chan *Task             // Buffered channel for task queue (capacity: 100)
+	timers  map[string]*time.Timer // Map of timer IDs to Go timers
+	ctx     context.Context        // Context for cancellation
+	cancel  context.CancelFunc     // Function to cancel the context
+	wg      sync.WaitGroup         // Tracks pending tasks for graceful shutdown
+	mu      sync.RWMutex           // Protects timers map and running flag
+	execMu  sync.Mutex             // Ensures sequential execution of tasks
+	running bool                   // Indicates if the loop is currently running
 }
 
 // NewLoop creates and initializes a new event loop.
@@ -126,14 +126,14 @@ func (l *Loop) Run() {
 func (l *Loop) Stop() {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	
+
 	if !l.running {
 		return
 	}
-	
+
 	l.cancel()
 	l.running = false
-	
+
 	// Clean up timers and decrement WaitGroup for each pending timer
 	for _, timer := range l.timers {
 		timer.Stop()
@@ -164,10 +164,10 @@ func (l *Loop) Wait() {
 //	defer done()
 //	// ... perform async work ...
 func (l *Loop) KeepAlive() func() {
-  l.wg.Add(1)
-  return func() {
-    l.wg.Done()
-  }
+	l.wg.Add(1)
+	return func() {
+		l.wg.Done()
+	}
 }
 
 // ScheduleTask queues a task for execution on the event loop.
@@ -184,7 +184,7 @@ func (l *Loop) KeepAlive() func() {
 //	    Delay: 1 * time.Second,
 //	})
 func (l *Loop) ScheduleTask(task *Task) {
-  l.wg.Add(1) // track pending task when it's scheduled to account for delayed tasks (ex: setTimeout)
+	l.wg.Add(1) // track pending task when it's scheduled to account for delayed tasks (ex: setTimeout)
 	if task.Delay > 0 {
 		l.scheduleDelayedTask(task)
 	} else {
@@ -197,10 +197,10 @@ func (l *Loop) ScheduleTask(task *Task) {
 func (l *Loop) scheduleDelayedTask(task *Task) {
 	timer := time.AfterFunc(task.Delay, func() {
 		l.tasks <- task
-		
+
 		if task.Interval {
 			// add to waitgroup and reschedule for intervals
-      l.wg.Add(1)
+			l.wg.Add(1)
 			l.scheduleDelayedTask(task)
 		} else {
 			// Remove from timers map for one-time tasks
@@ -209,7 +209,7 @@ func (l *Loop) scheduleDelayedTask(task *Task) {
 			l.mu.Unlock()
 		}
 	})
-	
+
 	l.mu.Lock()
 	l.timers[task.ID] = timer
 	l.mu.Unlock()
@@ -222,11 +222,11 @@ func (l *Loop) scheduleDelayedTask(task *Task) {
 func (l *Loop) ClearTimer(id string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	
+
 	if timer, exists := l.timers[id]; exists {
 		timer.Stop()
 		delete(l.timers, id)
-    l.wg.Done()
+		l.wg.Done()
 	}
 }
 

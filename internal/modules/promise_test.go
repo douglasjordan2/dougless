@@ -11,33 +11,33 @@ import (
 func setupTestEnvironment() (*goja.Runtime, *event.Loop) {
 	vm := goja.New()
 	loop := event.NewLoop()
-	
+
 	go loop.Run()
-	
+
 	SetupPromise(vm, loop)
-	
+
 	return vm, loop
 }
 
 func TestPromiseResolve(t *testing.T) {
 	vm, loop := setupTestEnvironment()
 	defer loop.Stop()
-	
+
 	script := `
 		var result = null;
 		Promise.resolve("test value").then(function(val) {
 			result = val;
 		});
 	`
-	
+
 	_, err := vm.RunString(script)
 	if err != nil {
 		t.Fatalf("Script execution failed: %v", err)
 	}
-	
+
 	time.Sleep(50 * time.Millisecond)
 	loop.Wait()
-	
+
 	result := vm.Get("result")
 	if result.String() != "test value" {
 		t.Errorf("Expected 'test value', got '%s'", result.String())
@@ -47,22 +47,22 @@ func TestPromiseResolve(t *testing.T) {
 func TestPromiseReject(t *testing.T) {
 	vm, loop := setupTestEnvironment()
 	defer loop.Stop()
-	
+
 	script := `
 		var error = null;
 		Promise.reject("test error").catch(function(err) {
 			error = err;
 		});
 	`
-	
+
 	_, err := vm.RunString(script)
 	if err != nil {
 		t.Fatalf("Script execution failed: %v", err)
 	}
-	
+
 	time.Sleep(50 * time.Millisecond)
 	loop.Wait()
-	
+
 	result := vm.Get("error")
 	if result.String() != "test error" {
 		t.Errorf("Expected 'test error', got '%s'", result.String())
@@ -72,7 +72,7 @@ func TestPromiseReject(t *testing.T) {
 func TestPromiseChaining(t *testing.T) {
 	vm, loop := setupTestEnvironment()
 	defer loop.Stop()
-	
+
 	script := `
 		var result = null;
 		Promise.resolve(1)
@@ -80,15 +80,15 @@ func TestPromiseChaining(t *testing.T) {
 			.then(function(val) { return val + 1; })
 			.then(function(val) { result = val; });
 	`
-	
+
 	_, err := vm.RunString(script)
 	if err != nil {
 		t.Fatalf("Script execution failed: %v", err)
 	}
-	
+
 	time.Sleep(50 * time.Millisecond)
 	loop.Wait()
-	
+
 	result := vm.Get("result")
 	if result.ToInteger() != 3 {
 		t.Errorf("Expected 3, got %d", result.ToInteger())
@@ -98,7 +98,7 @@ func TestPromiseChaining(t *testing.T) {
 func TestPromiseAllResolved(t *testing.T) {
 	vm, loop := setupTestEnvironment()
 	defer loop.Stop()
-	
+
 	script := `
 		var result = null;
 		Promise.all([
@@ -109,20 +109,20 @@ func TestPromiseAllResolved(t *testing.T) {
 			result = values;
 		});
 	`
-	
+
 	_, err := vm.RunString(script)
 	if err != nil {
 		t.Fatalf("Script execution failed: %v", err)
 	}
-	
+
 	time.Sleep(50 * time.Millisecond)
 	loop.Wait()
-	
+
 	result := vm.Get("result")
 	if result.ExportType() == nil {
 		t.Fatal("Result is nil")
 	}
-	
+
 	arr := result.Export().([]goja.Value)
 	if len(arr) != 3 {
 		t.Errorf("Expected array of length 3, got %d", len(arr))
@@ -132,7 +132,7 @@ func TestPromiseAllResolved(t *testing.T) {
 func TestPromiseAllRejected(t *testing.T) {
 	vm, loop := setupTestEnvironment()
 	defer loop.Stop()
-	
+
 	script := `
 		var error = null;
 		Promise.all([
@@ -143,15 +143,15 @@ func TestPromiseAllRejected(t *testing.T) {
 			error = err;
 		});
 	`
-	
+
 	_, err := vm.RunString(script)
 	if err != nil {
 		t.Fatalf("Script execution failed: %v", err)
 	}
-	
+
 	time.Sleep(50 * time.Millisecond)
 	loop.Wait()
-	
+
 	result := vm.Get("error")
 	if result.String() != "failed" {
 		t.Errorf("Expected 'failed', got '%s'", result.String())
@@ -161,22 +161,22 @@ func TestPromiseAllRejected(t *testing.T) {
 func TestPromiseAllEmpty(t *testing.T) {
 	vm, loop := setupTestEnvironment()
 	defer loop.Stop()
-	
+
 	script := `
 		var result = null;
 		Promise.all([]).then(function(values) {
 			result = values;
 		});
 	`
-	
+
 	_, err := vm.RunString(script)
 	if err != nil {
 		t.Fatalf("Script execution failed: %v", err)
 	}
-	
+
 	time.Sleep(50 * time.Millisecond)
 	loop.Wait()
-	
+
 	result := vm.Get("result")
 	arr := result.Export().([]interface{})
 	if len(arr) != 0 {
@@ -187,7 +187,7 @@ func TestPromiseAllEmpty(t *testing.T) {
 func TestPromiseRaceResolved(t *testing.T) {
 	vm, loop := setupTestEnvironment()
 	defer loop.Stop()
-	
+
 	script := `
 		var result = null;
 		Promise.race([
@@ -197,15 +197,15 @@ func TestPromiseRaceResolved(t *testing.T) {
 			result = val;
 		});
 	`
-	
+
 	_, err := vm.RunString(script)
 	if err != nil {
 		t.Fatalf("Script execution failed: %v", err)
 	}
-	
+
 	time.Sleep(50 * time.Millisecond)
 	loop.Wait()
-	
+
 	result := vm.Get("result")
 	if result.String() != "first" {
 		t.Errorf("Expected 'first', got '%s'", result.String())
@@ -215,7 +215,7 @@ func TestPromiseRaceResolved(t *testing.T) {
 func TestPromiseRaceRejected(t *testing.T) {
 	vm, loop := setupTestEnvironment()
 	defer loop.Stop()
-	
+
 	script := `
 		var error = null;
 		Promise.race([
@@ -225,15 +225,15 @@ func TestPromiseRaceRejected(t *testing.T) {
 			error = err;
 		});
 	`
-	
+
 	_, err := vm.RunString(script)
 	if err != nil {
 		t.Fatalf("Script execution failed: %v", err)
 	}
-	
+
 	time.Sleep(50 * time.Millisecond)
 	loop.Wait()
-	
+
 	result := vm.Get("error")
 	if result.String() != "error" {
 		t.Errorf("Expected 'error', got '%s'", result.String())
@@ -243,22 +243,22 @@ func TestPromiseRaceRejected(t *testing.T) {
 func TestPromiseRaceEmpty(t *testing.T) {
 	vm, loop := setupTestEnvironment()
 	defer loop.Stop()
-	
+
 	script := `
 		var resolved = false;
 		Promise.race([]).then(function() {
 			resolved = true;
 		});
 	`
-	
+
 	_, err := vm.RunString(script)
 	if err != nil {
 		t.Fatalf("Script execution failed: %v", err)
 	}
-	
+
 	time.Sleep(50 * time.Millisecond)
 	loop.Wait()
-	
+
 	// Empty race should never resolve
 	resolved := vm.Get("resolved").ToBoolean()
 	if resolved {
@@ -269,12 +269,12 @@ func TestPromiseRaceEmpty(t *testing.T) {
 func TestPromiseAsyncResolution(t *testing.T) {
 	vm, loop := setupTestEnvironment()
 	defer loop.Stop()
-	
+
 	// Setup setTimeout for async test
 	timers := NewTimers(loop)
 	timerObj := timers.Export(vm).ToObject(vm)
 	vm.Set("setTimeout", timerObj.Get("setTimeout"))
-	
+
 	script := `
 		var result = null;
 		new Promise(function(resolve) {
@@ -285,15 +285,15 @@ func TestPromiseAsyncResolution(t *testing.T) {
 			result = val;
 		});
 	`
-	
+
 	_, err := vm.RunString(script)
 	if err != nil {
 		t.Fatalf("Script execution failed: %v", err)
 	}
-	
+
 	time.Sleep(150 * time.Millisecond)
 	loop.Wait()
-	
+
 	result := vm.Get("result")
 	if result.String() != "async value" {
 		t.Errorf("Expected 'async value', got '%s'", result.String())
@@ -303,11 +303,11 @@ func TestPromiseAsyncResolution(t *testing.T) {
 func TestPromiseAsyncRejection(t *testing.T) {
 	vm, loop := setupTestEnvironment()
 	defer loop.Stop()
-	
+
 	timers := NewTimers(loop)
 	timerObj := timers.Export(vm).ToObject(vm)
 	vm.Set("setTimeout", timerObj.Get("setTimeout"))
-	
+
 	script := `
 		var error = null;
 		new Promise(function(resolve, reject) {
@@ -318,15 +318,15 @@ func TestPromiseAsyncRejection(t *testing.T) {
 			error = err;
 		});
 	`
-	
+
 	_, err := vm.RunString(script)
 	if err != nil {
 		t.Fatalf("Script execution failed: %v", err)
 	}
-	
+
 	time.Sleep(150 * time.Millisecond)
 	loop.Wait()
-	
+
 	result := vm.Get("error")
 	if result.String() != "async error" {
 		t.Errorf("Expected 'async error', got '%s'", result.String())
@@ -336,11 +336,11 @@ func TestPromiseAsyncRejection(t *testing.T) {
 func TestPromiseRaceAsyncMultiple(t *testing.T) {
 	vm, loop := setupTestEnvironment()
 	defer loop.Stop()
-	
+
 	timers := NewTimers(loop)
 	timerObj := timers.Export(vm).ToObject(vm)
 	vm.Set("setTimeout", timerObj.Get("setTimeout"))
-	
+
 	script := `
 		var result = null;
 		Promise.race([
@@ -354,15 +354,15 @@ func TestPromiseRaceAsyncMultiple(t *testing.T) {
 			result = val;
 		});
 	`
-	
+
 	_, err := vm.RunString(script)
 	if err != nil {
 		t.Fatalf("Script execution failed: %v", err)
 	}
-	
+
 	time.Sleep(200 * time.Millisecond)
 	loop.Wait()
-	
+
 	result := vm.Get("result")
 	if result.String() != "fast" {
 		t.Errorf("Expected 'fast', got '%s'", result.String())
@@ -372,11 +372,11 @@ func TestPromiseRaceAsyncMultiple(t *testing.T) {
 func TestPromiseRaceAsyncRejection(t *testing.T) {
 	vm, loop := setupTestEnvironment()
 	defer loop.Stop()
-	
+
 	timers := NewTimers(loop)
 	timerObj := timers.Export(vm).ToObject(vm)
 	vm.Set("setTimeout", timerObj.Get("setTimeout"))
-	
+
 	script := `
 		var error = null;
 		Promise.race([
@@ -390,15 +390,15 @@ func TestPromiseRaceAsyncRejection(t *testing.T) {
 			error = err;
 		});
 	`
-	
+
 	_, err := vm.RunString(script)
 	if err != nil {
 		t.Fatalf("Script execution failed: %v", err)
 	}
-	
+
 	time.Sleep(200 * time.Millisecond)
 	loop.Wait()
-	
+
 	result := vm.Get("error")
 	if result.String() != "fast error" {
 		t.Errorf("Expected 'fast error', got '%s'", result.String())
@@ -408,7 +408,7 @@ func TestPromiseRaceAsyncRejection(t *testing.T) {
 func TestPromiseWithNonPromiseValues(t *testing.T) {
 	vm, loop := setupTestEnvironment()
 	defer loop.Stop()
-	
+
 	script := `
 		var result = null;
 		Promise.all([
@@ -420,22 +420,22 @@ func TestPromiseWithNonPromiseValues(t *testing.T) {
 			result = values;
 		});
 	`
-	
+
 	_, err := vm.RunString(script)
 	if err != nil {
 		t.Fatalf("Script execution failed: %v", err)
 	}
-	
+
 	time.Sleep(50 * time.Millisecond)
 	loop.Wait()
-	
+
 	result := vm.Get("result")
 	arr := result.Export().([]goja.Value)
-	
+
 	if len(arr) != 4 {
 		t.Errorf("Expected 4 elements, got %d", len(arr))
 	}
-	
+
 	if arr[0].ToInteger() != 42 {
 		t.Errorf("Expected 42, got %v", arr[0].ToInteger())
 	}
@@ -444,7 +444,7 @@ func TestPromiseWithNonPromiseValues(t *testing.T) {
 func TestPromiseRaceWithNonPromiseValue(t *testing.T) {
 	vm, loop := setupTestEnvironment()
 	defer loop.Stop()
-	
+
 	script := `
 		var result = null;
 		Promise.race([
@@ -454,15 +454,15 @@ func TestPromiseRaceWithNonPromiseValue(t *testing.T) {
 			result = val;
 		});
 	`
-	
+
 	_, err := vm.RunString(script)
 	if err != nil {
 		t.Fatalf("Script execution failed: %v", err)
 	}
-	
+
 	time.Sleep(50 * time.Millisecond)
 	loop.Wait()
-	
+
 	result := vm.Get("result")
 	if result.String() != "instant" {
 		t.Errorf("Expected 'instant', got '%s'", result.String())
@@ -472,7 +472,7 @@ func TestPromiseRaceWithNonPromiseValue(t *testing.T) {
 func TestPromiseErrorPropagation(t *testing.T) {
 	vm, loop := setupTestEnvironment()
 	defer loop.Stop()
-	
+
 	script := `
 		var error = null;
 		Promise.resolve(1)
@@ -487,15 +487,15 @@ func TestPromiseErrorPropagation(t *testing.T) {
 				error = err;
 			});
 	`
-	
+
 	_, err := vm.RunString(script)
 	if err != nil {
 		t.Fatalf("Script execution failed: %v", err)
 	}
-	
+
 	time.Sleep(150 * time.Millisecond)
 	loop.Wait()
-	
+
 	result := vm.Get("error")
 	if result.String() != "propagated error" {
 		t.Errorf("Expected 'propagated error', got '%s'", result.String())
@@ -505,7 +505,7 @@ func TestPromiseErrorPropagation(t *testing.T) {
 func TestPromiseThenWithoutErrorHandler(t *testing.T) {
 	vm, loop := setupTestEnvironment()
 	defer loop.Stop()
-	
+
 	script := `
 		var error = null;
 		Promise.reject("error")
@@ -517,15 +517,15 @@ func TestPromiseThenWithoutErrorHandler(t *testing.T) {
 				error = err;
 			});
 	`
-	
+
 	_, err := vm.RunString(script)
 	if err != nil {
 		t.Fatalf("Script execution failed: %v", err)
 	}
-	
+
 	time.Sleep(150 * time.Millisecond)
 	loop.Wait()
-	
+
 	result := vm.Get("error")
 	if result.String() != "error" {
 		t.Errorf("Expected 'error', got '%s'", result.String())
@@ -535,11 +535,11 @@ func TestPromiseThenWithoutErrorHandler(t *testing.T) {
 func TestPromiseAllWithMixedTimings(t *testing.T) {
 	vm, loop := setupTestEnvironment()
 	defer loop.Stop()
-	
+
 	timers := NewTimers(loop)
 	timerObj := timers.Export(vm).ToObject(vm)
 	vm.Set("setTimeout", timerObj.Get("setTimeout"))
-	
+
 	script := `
 		var result = null;
 		Promise.all([
@@ -554,22 +554,22 @@ func TestPromiseAllWithMixedTimings(t *testing.T) {
 			result = values;
 		});
 	`
-	
+
 	_, err := vm.RunString(script)
 	if err != nil {
 		t.Fatalf("Script execution failed: %v", err)
 	}
-	
+
 	time.Sleep(200 * time.Millisecond)
 	loop.Wait()
-	
+
 	result := vm.Get("result")
 	arr := result.Export().([]goja.Value)
-	
+
 	if len(arr) != 3 {
 		t.Fatalf("Expected 3 elements, got %d", len(arr))
 	}
-	
+
 	// Order should be preserved
 	if arr[0].String() != "slow" || arr[1].String() != "instant" || arr[2].String() != "medium" {
 		t.Errorf("Order not preserved: got [%s, %s, %s]", arr[0].String(), arr[1].String(), arr[2].String())
@@ -733,7 +733,7 @@ func TestPromiseAllSettledEmpty(t *testing.T) {
 
 	_, err := vm.RunString(script)
 	if err != nil {
-			t.Fatalf("Script execution failed: %v", err)
+		t.Fatalf("Script execution failed: %v", err)
 	}
 
 	time.Sleep(50 * time.Millisecond)
