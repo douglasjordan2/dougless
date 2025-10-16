@@ -7,45 +7,62 @@ Consolidate 8 file operations into 3 smart methods using convention-based routin
 
 ## API Design
 
-### `files.read(path, callback)`
+### `files.read(path, [callback])`
 **Behavior based on path:**
 - Trailing `/`: Read directory, return `string[]`
 - No trailing `/`: Read file, return `string` content
 - File doesn't exist: Return `null` (doubles as exists check)
 
-**Signature:**
+**Signatures:**
 ```js
+// Callback style
 files.read(path: string, callback: (err, data) => void)
 // data: string | string[] | null
+
+// Promise style (callback omitted)
+files.read(path: string): Promise<string | string[] | null>
 ```
 
 ---
 
-### `files.write(path, content, callback)`
+### `files.write(path, [content], [callback])`
 **Behavior based on parameters:**
-- `content === null` OR `content === undefined`: Create directory(ies) recursively
-- `content` is string: Write file (create parent dirs if needed)
+- 2 args with trailing `/`: Create directory(ies) recursively
+- 3 args: Write file (create parent dirs if needed)
 
 **Path conventions:**
-- Trailing `/`: Force directory creation (error if content provided)
-- Extension present: File write (even if content is null → empty file)
-- No extension + no slash: Use content to decide (null = dir, string = file)
+- Trailing `/`: Directory creation
+- No trailing `/`: File write
 
-**Signature:**
+**Signatures:**
 ```js
-files.write(path: string, content: string | null, callback: (err) => void)
+// Callback style - file
+files.write(path: string, content: string, callback: (err) => void)
+
+// Callback style - directory
+files.write(path: string, callback: (err) => void)
+
+// Promise style - file (callback omitted)
+files.write(path: string, content: string): Promise<void>
+
+// Promise style - directory (callback omitted)
+files.write(path: string): Promise<void>
 ```
 
 ---
 
-### `files.rm(path, callback)`
+### `files.rm(path, [callback])`
 **Behavior:**
 - Unified removal using `os.RemoveAll()` (recursive, handles files + dirs)
 - Gracefully handle non-existent paths (no error)
 
-**Signature:**
+**Signatures:**
 ```js
+// Callback style
 files.rm(path: string, callback: (err) => void)
+
+// Promise style (callback omitted)
+files.rm(path: string): Promise<void>
 ```
 
 ---
@@ -230,7 +247,43 @@ file.stat(path, cb)                 // ❌ Removed (add if needed)
 
 ---
 
+## Promise Support
+
+All file operations now support both callback and promise-based APIs:
+
+```javascript
+// Callback style
+files.read('data.txt', (err, content) => {
+  if (err) console.error(err);
+  else console.log(content);
+});
+
+// Promise style
+files.read('data.txt')
+  .then(content => console.log(content))
+  .catch(err => console.error(err));
+
+// Async/await style
+async function readFile() {
+  try {
+    const content = await files.read('data.txt');
+    console.log(content);
+  } catch (err) {
+    console.error(err);
+  }
+}
+```
+
+**Implementation Details:**
+- When callback is omitted, operations return a Promise
+- Promise resolves with data (read) or null (write/rm)
+- Promise rejects with error message (string)
+- Fully integrated with event loop for proper async handling
+
+---
+
 ## Notes
 
 Created: October 15, 2024
-Status: Planning phase - implementation starts tomorrow
+Updated: October 16, 2024 - Added promise support
+Status: ✅ Complete - All features implemented and tested
