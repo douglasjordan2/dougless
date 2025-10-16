@@ -273,6 +273,28 @@ func (p *Promise) Catch(onRejected goja.Callable) *Promise {
 	return p.Then(nil, onRejected)
 }
 
+// CreatePromiseObject wraps a Promise struct into a JavaScript object
+// with .then() and .catch() methods for use in JavaScript.
+// This is used by modules that want to return Promises directly.
+func CreatePromiseObject(vm *goja.Runtime, promise *Promise) goja.Value {
+  obj := vm.NewObject()
+
+  obj.Set("then", func(call goja.FunctionCall) goja.Value {
+    onFulfilled, _ := goja.AssertFunction(call.Argument(0))
+    onRejected, _ := goja.AssertFunction(call.Argument(1))
+    newPromise := promise.Then(onFulfilled, onRejected)
+    return CreatePromiseObject(vm, newPromise)
+  })
+
+  obj.Set("catch", func(call goja.FunctionCall) goja.Value {
+    onRejected, _ := goja.AssertFunction(call.Argument(0))
+    newPromise := promise.Catch(onRejected)
+    return CreatePromiseObject(vm, newPromise)
+  })
+
+  return obj
+}
+
 // SetupPromise initializes the global Promise constructor in JavaScript.
 // This function is called once during runtime initialization.
 //
@@ -336,24 +358,6 @@ func SetupPromise(vm *goja.Runtime, eventLoop *event.Loop) {
 		return obj
 	}
 
-	// Helper to create a promise object with methods
-	var createPromiseObject func(promise *Promise) goja.Value
-	createPromiseObject = func(promise *Promise) goja.Value {
-		obj := vm.NewObject()
-		obj.Set("then", func(call goja.FunctionCall) goja.Value {
-			onFulfilled, _ := goja.AssertFunction(call.Argument(0))
-			onRejected, _ := goja.AssertFunction(call.Argument(1))
-			newPromise := promise.Then(onFulfilled, onRejected)
-			return createPromiseObject(newPromise)
-		})
-		obj.Set("catch", func(call goja.FunctionCall) goja.Value {
-			onRejected, _ := goja.AssertFunction(call.Argument(0))
-			newPromise := promise.Catch(onRejected)
-			return createPromiseObject(newPromise)
-		})
-		return obj
-	}
-
 	// Set up the Promise constructor function
 	promiseFunc := vm.ToValue(promiseConstructor)
 	promiseFuncObj := promiseFunc.ToObject(vm)
@@ -369,7 +373,7 @@ func SetupPromise(vm *goja.Runtime, eventLoop *event.Loop) {
 			onFulfilled: []goja.Callable{},
 			onRejected:  []goja.Callable{},
 		}
-		return createPromiseObject(promise)
+		return CreatePromiseObject(vm, promise)
 	})
 
 	// Promise.reject()
@@ -383,7 +387,7 @@ func SetupPromise(vm *goja.Runtime, eventLoop *event.Loop) {
 			onFulfilled: []goja.Callable{},
 			onRejected:  []goja.Callable{},
 		}
-		return createPromiseObject(promise)
+		return CreatePromiseObject(vm, promise)
 	})
 
 	promiseFuncObj.Set("all", func(call goja.FunctionCall) goja.Value {
@@ -408,7 +412,7 @@ func SetupPromise(vm *goja.Runtime, eventLoop *event.Loop) {
 				state:     PromiseFulfilled,
 				value:     vm.ToValue([]any{}),
 			}
-			return createPromiseObject(emptyPromise)
+      return CreatePromiseObject(vm, emptyPromise)
 		}
 
 		allPromise := &Promise{
@@ -480,7 +484,7 @@ func SetupPromise(vm *goja.Runtime, eventLoop *event.Loop) {
 			thenFunc(goja.Undefined(), vm.ToValue(successHandler), vm.ToValue(errorHandler))
 		}
 
-		return createPromiseObject(allPromise)
+    return CreatePromiseObject(vm, allPromise)
 	})
 
 	promiseFuncObj.Set("race", func(call goja.FunctionCall) goja.Value {
@@ -507,7 +511,7 @@ func SetupPromise(vm *goja.Runtime, eventLoop *event.Loop) {
 		}
 
 		if length == 0 { // empty array returns a forever-pending promise
-			return createPromiseObject(racePromise)
+      return CreatePromiseObject(vm, racePromise)
 		}
 
 		var mu sync.Mutex
@@ -522,7 +526,7 @@ func SetupPromise(vm *goja.Runtime, eventLoop *event.Loop) {
 					settled = true
 					racePromise.resolve(promiseVal)
 				}
-				return createPromiseObject(racePromise)
+        return CreatePromiseObject(vm, racePromise)
 			}
 
 			// this is a promise
@@ -559,7 +563,7 @@ func SetupPromise(vm *goja.Runtime, eventLoop *event.Loop) {
 			thenFunc(goja.Undefined(), vm.ToValue(successHandler), vm.ToValue(errorHandler))
 		}
 
-		return createPromiseObject(racePromise)
+    return CreatePromiseObject(vm, racePromise)
 	})
 
 	promiseFuncObj.Set("any", func(call goja.FunctionCall) goja.Value {
@@ -591,7 +595,7 @@ func SetupPromise(vm *goja.Runtime, eventLoop *event.Loop) {
 			aggregateError.Set("message", "All promises were rejected")
 			aggregateError.Set("errors", vm.ToValue([]goja.Value{}))
 			anyPromise.reject(aggregateError)
-			return createPromiseObject(anyPromise)
+      return CreatePromiseObject(vm, anyPromise)
 		}
 
 		errors := make([]goja.Value, length)
@@ -609,7 +613,7 @@ func SetupPromise(vm *goja.Runtime, eventLoop *event.Loop) {
 				anyPromise.resolve(promiseVal)
 				mu.Unlock()
 
-				return createPromiseObject(anyPromise)
+        return CreatePromiseObject(vm, anyPromise)
 			}
 
 			promiseObj := promiseVal.ToObject(vm)
@@ -656,7 +660,7 @@ func SetupPromise(vm *goja.Runtime, eventLoop *event.Loop) {
 			thenFunc(goja.Undefined(), vm.ToValue(successHandler), vm.ToValue(errorHandler))
 		}
 
-		return createPromiseObject(anyPromise)
+    return CreatePromiseObject(vm, anyPromise)
 	})
 
 	promiseFuncObj.Set("allSettled", func(call goja.FunctionCall) goja.Value {
@@ -684,7 +688,7 @@ func SetupPromise(vm *goja.Runtime, eventLoop *event.Loop) {
 
 		if length == 0 {
 			allSettledPromise.resolve(vm.ToValue([]goja.Value{}))
-			return createPromiseObject(allSettledPromise)
+      return CreatePromiseObject(vm, allSettledPromise)
 		}
 
 		results := make([]goja.Value, length)
@@ -758,7 +762,7 @@ func SetupPromise(vm *goja.Runtime, eventLoop *event.Loop) {
 			thenFunc(goja.Undefined(), vm.ToValue(successHandler), vm.ToValue(errorHandler))
 		}
 
-		return createPromiseObject(allSettledPromise)
+    return CreatePromiseObject(vm, allSettledPromise)
 	})
 
 	vm.Set("Promise", promiseFuncObj)

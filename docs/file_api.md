@@ -33,7 +33,7 @@ files.rm('file.txt', callback);       // Delete anything
 
 ## Core Methods
 
-### `files.read(path, callback)`
+### `files.read(path, [callback])`
 
 **Smart read operation** - behavior depends on the path:
 
@@ -41,14 +41,19 @@ files.rm('file.txt', callback);       // Delete anything
 - `path` (string) - Path to file or directory
   - **No trailing `/`**: Read file contents
   - **Trailing `/`**: List directory contents
-- `callback` (function) - Callback function `(err, data)`
+- `callback` (function, optional) - Callback function `(err, data)`
   - For files: `data` is `string` content (or `null` if file doesn't exist)
   - For directories: `data` is `string[]` array of filenames
+  - **If omitted**: Returns a Promise
+
+**Return Value:**
+- Without callback: `Promise<string | string[] | null>`
+- With callback: `undefined`
 
 **Examples:**
 
 ```javascript
-// Read a file
+// Callback style - Read a file
 files.read('data.txt', function(err, content) {
     if (err) {
         console.error('Error:', err);
@@ -61,6 +66,31 @@ files.read('data.txt', function(err, content) {
     }
 });
 
+// Promise style - Read a file
+files.read('data.txt')
+    .then(content => {
+        if (content === null) {
+            console.log('File does not exist');
+        } else {
+            console.log('File contents:', content);
+        }
+    })
+    .catch(err => console.error('Error:', err));
+
+// Async/await style - Read a file
+async function readFile() {
+    try {
+        const content = await files.read('data.txt');
+        if (content === null) {
+            console.log('File does not exist');
+        } else {
+            console.log('File contents:', content);
+        }
+    } catch (err) {
+        console.error('Error:', err);
+    }
+}
+
 // Read a directory (note the trailing slash)
 files.read('src/', function(err, fileNames) {
     if (err) {
@@ -71,6 +101,10 @@ files.read('src/', function(err, fileNames) {
     // ["app.js", "utils.js", "config.json"]
 });
 
+// Promise style - Read a directory
+const fileNames = await files.read('src/');
+console.log('Files in src/:', fileNames);
+
 // Check if file exists (null = doesn't exist)
 files.read('config.json', function(err, data) {
     if (data === null) {
@@ -80,6 +114,13 @@ files.read('config.json', function(err, data) {
         });
     }
 });
+
+// Async/await - Check if file exists
+if (await files.read('config.json') === null) {
+    console.log('Config file missing - creating default...');
+    await files.write('config.json', '{}');
+    console.log('Created!');
+}
 ```
 
 **Key Features:**
@@ -89,23 +130,28 @@ files.read('config.json', function(err, data) {
 
 ---
 
-### `files.write(path, [content], callback)`
+### `files.write(path, [content], [callback])`
 
 **Smart write operation** - behavior depends on arguments and path:
 
 **Parameters:**
 - `path` (string) - Path to file or directory
 - `content` (string, optional) - Data to write (omit for directory creation)
-- `callback` (function) - Callback function `(err)`
+- `callback` (function, optional) - Callback function `(err)`
+  - **If omitted**: Returns a Promise
 
 **Modes:**
 - **2 args** with trailing `/`: Create directory
 - **3 args**: Write file (auto-creates parent directories)
 
+**Return Value:**
+- Without callback: `Promise<void>`
+- With callback: `undefined`
+
 **Examples:**
 
 ```javascript
-// Write a file
+// Callback style - Write a file
 files.write('output.txt', 'Hello Dougless!', function(err) {
     if (err) {
         console.error('Error:', err);
@@ -114,10 +160,27 @@ files.write('output.txt', 'Hello Dougless!', function(err) {
     console.log('File written successfully');
 });
 
+// Promise style - Write a file
+files.write('output.txt', 'Hello Dougless!')
+    .then(() => console.log('File written successfully'))
+    .catch(err => console.error('Error:', err));
+
+// Async/await style - Write a file
+try {
+    await files.write('output.txt', 'Hello Dougless!');
+    console.log('File written successfully');
+} catch (err) {
+    console.error('Error:', err);
+}
+
 // Write to nested path (auto-creates parent dirs)
 files.write('data/users/profile.json', '{"name":"Alice"}', function(err) {
     if (!err) console.log('Created data/ and users/ directories automatically!');
 });
+
+// Async/await - Write to nested path
+await files.write('data/users/profile.json', '{"name":"Alice"}');
+console.log('Created data/ and users/ directories automatically!');
 
 // Create a directory
 files.write('project/', function(err) {
@@ -128,10 +191,18 @@ files.write('project/', function(err) {
     console.log('Directory created');
 });
 
+// Async/await - Create a directory
+await files.write('project/');
+console.log('Directory created');
+
 // Create nested directories
 files.write('src/components/buttons/', function(err) {
     if (!err) console.log('All directories created!');
 });
+
+// Async/await - Create nested directories
+await files.write('src/components/buttons/');
+console.log('All directories created!');
 ```
 
 **Key Features:**
@@ -142,18 +213,23 @@ files.write('src/components/buttons/', function(err) {
 
 ---
 
-### `files.rm(path, callback)`
+### `files.rm(path, [callback])`
 
 **Unified removal** - deletes files or directories (recursively).
 
 **Parameters:**
 - `path` (string) - Path to file or directory to remove
-- `callback` (function) - Callback function `(err)`
+- `callback` (function, optional) - Callback function `(err)`
+  - **If omitted**: Returns a Promise
+
+**Return Value:**
+- Without callback: `Promise<void>`
+- With callback: `undefined`
 
 **Examples:**
 
 ```javascript
-// Delete a file
+// Callback style - Delete a file
 files.rm('temp.txt', function(err) {
     if (err) {
         console.error('Error:', err);
@@ -162,16 +238,37 @@ files.rm('temp.txt', function(err) {
     console.log('File deleted');
 });
 
+// Promise style - Delete a file
+files.rm('temp.txt')
+    .then(() => console.log('File deleted'))
+    .catch(err => console.error('Error:', err));
+
+// Async/await style - Delete a file
+try {
+    await files.rm('temp.txt');
+    console.log('File deleted');
+} catch (err) {
+    console.error('Error:', err);
+}
+
 // Delete a directory (recursively, even if not empty)
 files.rm('old-project/', function(err) {
     if (!err) console.log('Directory and all contents removed');
 });
+
+// Async/await - Delete a directory
+await files.rm('old-project/');
+console.log('Directory and all contents removed');
 
 // Idempotent - no error if path doesn't exist
 files.rm('maybe-exists.txt', function(err) {
     // Will succeed even if file doesn't exist
     if (!err) console.log('Removed (or was already gone)');
 });
+
+// Async/await - Idempotent removal
+await files.rm('maybe-exists.txt');
+console.log('Removed (or was already gone)');
 ```
 
 **Key Features:**
@@ -186,6 +283,7 @@ files.rm('maybe-exists.txt', function(err) {
 
 ### Example 1: Read and Process File
 
+**Callback Style:**
 ```javascript
 files.read('input.txt', function(err, data) {
     if (err) {
@@ -210,6 +308,31 @@ files.read('input.txt', function(err, data) {
         }
     });
 });
+```
+
+**Async/Await Style (Much Cleaner!):**
+```javascript
+async function processFile() {
+    try {
+        const data = await files.read('input.txt');
+        
+        if (data === null) {
+            console.error('File does not exist');
+            return;
+        }
+        
+        // Process the data
+        const processed = data.toUpperCase();
+        
+        // Write to output (auto-creates parent dirs if needed)
+        await files.write('output.txt', processed);
+        console.log('Processing complete!');
+    } catch (err) {
+        console.error('Error:', err);
+    }
+}
+
+processFile();
 ```
 
 ### Example 2: Create Directory Structure (Simplified!)
@@ -371,30 +494,50 @@ function callback(err, result) {
 | Feature | Node.js | Dougless |
 |---------|---------|----------|
 | **Import** | `require('fs')` | Global (no require) |
-| **Read file** | `fs.readFile()` | `files.read(path, cb)` |
-| **Write file** | `fs.writeFile()` | `files.write(path, data, cb)` |
-| **List dir** | `fs.readdir()` | `files.read(path + '/', cb)` |
+| **Read file** | `fs.readFile()` | `files.read(path, cb)` or `await files.read(path)` |
+| **Write file** | `fs.writeFile()` | `files.write(path, data, cb)` or `await files.write(path, data)` |
+| **List dir** | `fs.readdir()` | `files.read(path + '/', cb)` or `await files.read(path + '/')` |
 | **Exists** | `fs.exists()` (deprecated) | `files.read()` returns `null` |
-| **Make dir** | `fs.mkdir()` | `files.write(path + '/', cb)` |
+| **Make dir** | `fs.mkdir()` | `files.write(path + '/', cb)` or `await files.write(path + '/')` |
 | **Make dirs (recursive)** | `fs.mkdir({recursive: true})` | **Auto!** `files.write()` |
-| **Remove dir** | `fs.rmdir()` | `files.rm(path, cb)` |
+| **Remove dir** | `fs.rmdir()` | `files.rm(path, cb)` or `await files.rm(path)` |
 | **Remove recursive** | `fs.rm({recursive: true})` | **Default!** `files.rm()` |
-| **Delete file** | `fs.unlink()` | `files.rm(path, cb)` |
+| **Delete file** | `fs.unlink()` | `files.rm(path, cb)` or `await files.rm(path)` |
 | **File info** | `fs.stat()` | Not available (removed) |
+| **Promises** | `require('fs/promises')` | **Built-in!** Just omit callback |
 | **Method count** | 50+ methods | **3 methods** |
+
+---
+
+## Promise Support Details
+
+All file operations return promises when the callback parameter is omitted:
+
+**How it works:**
+- Callback provided → Standard callback behavior, returns `undefined`
+- Callback omitted → Returns a Promise
+- Promise resolves with data (for `read()`) or `null` (for `write()`/`rm()`)
+- Promise rejects with error message string
+
+**Benefits:**
+- ✅ **Cleaner code** - async/await is more readable than nested callbacks
+- ✅ **Error handling** - try/catch blocks instead of error-first callbacks
+- ✅ **Composition** - Use Promise.all() for parallel operations
+- ✅ **No breaking changes** - Existing callback code continues to work
 
 ---
 
 ## Best Practices
 
-1. **Always handle errors** - Check the error parameter in callbacks
-2. **Check for null** - `files.read()` returns `null` when file doesn't exist
-3. **Use trailing `/` for directories** - Makes intent explicit: `files.read('src/')` vs `files.read('src')`
-4. **No need to create dirs first** - `files.write()` auto-creates parent directories
-5. **Use `files.rm()` for everything** - Works on files and directories, recursive by default
-3. **Sequential operations** - Nest callbacks for dependent operations
-4. **Check exists before create** - Avoid overwriting existing files/dirs
-5. **Clean up temp files** - Always delete temporary files when done
+1. **Prefer async/await** - Cleaner and easier to read than callbacks
+2. **Always handle errors** - Use try/catch with async/await or .catch() with promises
+3. **Check for null** - `files.read()` returns `null` when file doesn't exist
+4. **Use trailing `/` for directories** - Makes intent explicit: `files.read('src/')` vs `files.read('src')`
+5. **No need to create dirs first** - `files.write()` auto-creates parent directories
+6. **Use `files.rm()` for everything** - Works on files and directories, recursive by default
+7. **Parallel operations** - Use `Promise.all()` to read/write multiple files concurrently
+8. **Check exists before create** - Avoid overwriting existing files/dirs
+9. **Clean up temp files** - Always delete temporary files when done
 
 ---
 

@@ -157,11 +157,12 @@ go build -o dougless cmd/dougless/main.go
 Dougless has a unique API that sets it apart from Node.js, Deno, and Bun:
 
 ### Global File System Access
-Dougless provides the global `files` object with a simplified, convention-based API:
+Dougless provides the global `files` object with a simplified, convention-based API that supports both callbacks and promises:
 
 ```javascript
 // No require needed!
-// Read a file
+
+// Callback style
 files.read('data.txt', function(err, data) {
     if (err) {
         console.error('Error:', err);
@@ -170,25 +171,35 @@ files.read('data.txt', function(err, data) {
     }
 });
 
+// Promise style
+files.read('data.txt')
+    .then(data => console.log('Content:', data))
+    .catch(err => console.error('Error:', err));
+
+// Async/await style (cleanest!)
+async function readFile() {
+    try {
+        const data = await files.read('data.txt');
+        console.log('Content:', data);
+    } catch (err) {
+        console.error('Error:', err);
+    }
+}
+
 // Write a file (auto-creates parent directories)
-files.write('output.txt', 'Hello Dougless!', function(err) {
-    if (err) console.error(err);
-});
+await files.write('output.txt', 'Hello Dougless!');
 
 // Read a directory (note the trailing slash)
-files.read('src/', function(err, fileNames) {
-    if (!err) console.log('Files:', fileNames);
-});
+const fileNames = await files.read('src/');
+console.log('Files:', fileNames);
 
 // Create a directory
-files.write('new-dir/', function(err) {
-    if (!err) console.log('Directory created');
-});
+await files.write('new-dir/');
+console.log('Directory created');
 
 // Delete a file or directory
-files.rm('old-file.txt', function(err) {
-    if (!err) console.log('Deleted');
-});
+await files.rm('old-file.txt');
+console.log('Deleted');
 ```
 
 ### Convention-Based API Design
@@ -197,6 +208,7 @@ files.rm('old-file.txt', function(err) {
 - **Automatic parent directory creation** for file writes
 - **Unified removal** for files and directories
 - **Smart null handling** - missing files return `null` instead of error
+- **Dual API** - supports both callbacks and promises/async-await
 
 ### Global HTTP Access
 Unlike Node.js which requires `const http = require('http')`, Dougless provides the `http` object globally:
@@ -222,24 +234,15 @@ http.get('http://api.example.com/data', (err, response) => {
 ```
 
 ### Native Promises & Async/Await
-Dougless has full Promise/A+ support built-in, with modern async/await syntax:
+Dougless has full Promise/A+ support built-in, with modern async/await syntax. All async file operations support promises automatically:
 
 ```javascript
-// Promises are available globally!
-const readFile = (path) => {
-  return new Promise((resolve, reject) => {
-    file.read(path, (err, data) => {
-      if (err) reject(err);
-      else resolve(data);
-    });
-  });
-};
-
-// Use async/await with automatic transpilation
+// Promises are built into file operations!
 async function processFiles() {
   try {
-    const data1 = await readFile('file1.txt');
-    const data2 = await readFile('file2.txt');
+    // Direct async/await - no wrapping needed!
+    const data1 = await files.read('file1.txt');
+    const data2 = await files.read('file2.txt');
     console.log('Files loaded:', data1, data2);
   } catch (err) {
     console.error('Error:', err);
@@ -249,9 +252,19 @@ async function processFiles() {
 processFiles();
 
 // All Promise methods available
-Promise.all([readFile('a.txt'), readFile('b.txt')])
+Promise.all([
+  files.read('a.txt'),
+  files.read('b.txt')
+])
   .then(files => console.log('All files:', files))
   .catch(err => console.error('Failed:', err));
+
+// Or create your own promises
+const myPromise = new Promise((resolve, reject) => {
+  setTimeout(() => resolve('Done!'), 1000);
+});
+
+await myPromise; // 'Done!'
 ```
 
 ### ES6+ Modern Syntax

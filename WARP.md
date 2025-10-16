@@ -195,7 +195,7 @@ Tasks can be scheduled with delays (timers) or executed immediately. The loop co
   - Special REPL commands (.help, .exit, .clear)
   - Proper error display
 
-### Phase 2 (File System & Modules) - COMPLETE ✅ **[UPDATED OCT 15, 2024]**
+### Phase 2 (File System & Modules) - COMPLETE ✅ **[UPDATED OCT 16, 2024]**
 - ✅ Path module with full functionality (join, resolve, dirname, basename, extname)
 - ✅ **SIMPLIFIED** File system module with 3 smart methods (read, write, rm)
 - ✅ Unique global `files` API (no require needed)
@@ -205,6 +205,7 @@ Tasks can be scheduled with delays (timers) or executed immediately. The loop co
 - ✅ Null-based existence checks (no separate exists() method)
 - ✅ Event loop integration for async file operations
 - ✅ 62% reduction in API surface (8 methods → 3 methods)
+- ✅ **Promise support** - All methods return promises when callback is omitted (Oct 16, 2024)
 
 ### Phase 3 (Networking & HTTP) - COMPLETE ✅
 - ✅ HTTP client implementation (GET, POST with callbacks)
@@ -358,3 +359,4 @@ See `docs/transpilation_strategy.md` for complete strategy details and `internal
 6. **Plugin System**: Custom plugin architecture planned for framework extensibility.
 7. **Global-First Design**: Core APIs (files, http, Promise) are available globally without require() - a unique Dougless feature.
 8. **Simplified Files API**: 3-method convention-based file system (files.read/write/rm) instead of traditional 8+ method APIs.
+9. **Promise-Enabled Files**: All file operations (files.read/write/rm) support both callbacks and promises - just omit the callback to get a promise. Works seamlessly with async/await.

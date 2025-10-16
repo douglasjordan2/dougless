@@ -7,7 +7,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Recent Updates - October 15, 2024 (Latest)
+### Recent Updates - October 16, 2024 (Latest)
+
+#### Added - File System Promise Support 🎉
+- **Promise API for File Operations**
+  - All file methods now support both callbacks AND promises
+  - When callback is omitted, methods return a Promise
+  - Full async/await support without wrapping
+  - Backward compatible - existing callback code unchanged
+  
+- **Updated Methods**
+  - `files.read(path)` - Returns `Promise<string | string[] | null>`
+  - `files.write(path, content)` - Returns `Promise<void>`
+  - `files.write(path)` - Returns `Promise<void>` (for directories)
+  - `files.rm(path)` - Returns `Promise<void>`
+  
+- **Usage Examples**:
+  ```javascript
+  // Callback style (still works)
+  files.read('data.txt', (err, content) => {
+    if (!err) console.log(content);
+  });
+  
+  // Promise style
+  files.read('data.txt')
+    .then(content => console.log(content))
+    .catch(err => console.error(err));
+  
+  // Async/await style (cleanest!)
+  const content = await files.read('data.txt');
+  await files.write('output.txt', content);
+  await files.rm('temp.txt');
+  ```
+
+- **Implementation Details**
+  - Promise creation integrated with existing event loop
+  - Promises reject with error strings, resolve with data
+  - No breaking changes to existing API
+  - Documentation updated across all files
+
+- **Improved UX: Optional Content Parameter**
+  - `files.write(path)` now creates empty files (like `touch` command)
+  - Content parameter is fully optional - defaults to empty string
+  - **Consistent API**: Both files and directories can be created with just a path
+  - **Touch-like behavior**: Create empty files or truncate existing ones
+  - **Cleaner code**: `files.write('file.txt')` instead of `files.write('file.txt', '')`
+  
+- **New Example Files**
+  - `examples/files_promise.js` - Comprehensive demonstration of promise-based file operations
+    - Shows callback, promise, and async/await patterns side by side
+    - Includes parallel operations with Promise.all()
+    - 10+ practical examples including error handling
+  - `examples/files_touch.js` - NEW! Demonstrates empty file creation
+    - Touch-like behavior for creating/truncating files
+    - Parallel file creation with Promise.all()
+    - API comparison showing improved ergonomics
+
+### Recent Updates - October 15, 2024
 
 #### Changed - File System API Simplification ⚡
 - **Unified `files` API** - Simplified from 8 methods to 3 smart methods

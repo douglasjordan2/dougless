@@ -84,36 +84,62 @@ Shows all timer functions and patterns:
 
 ---
 
-### 4. `file_operations.js`
-**Global file API (no require needed!)**
+### 4. `files_basic.js`
+**Simplified files API (no require needed!)**
 
-Comprehensive file system operations:
-- `file.write()` - Write files
-- `file.read()` - Read file contents
-- `file.exists()` - Check file existence
-- `file.mkdir()` - Create directories
-- `file.rmdir()` - Remove directories
-- `file.readdir()` - List directory contents
-- `file.stat()` - Get file/directory information
-- `file.unlink()` - Delete files
+Comprehensive file system operations using callback style:
+- `files.read(path, callback)` - Read files or list directories
+- `files.write(path, content, callback)` - Write files or create directories
+- `files.rm(path, callback)` - Remove files or directories recursively
 
 **Run time:** ~200ms  
 **Side effects:** Creates and deletes temporary files/directories (auto-cleanup)
 
 ```bash
-./dougless examples/file_operations.js
+./dougless examples/files_basic.js
 ```
 
 **What it does:**
-1. Creates and reads a test file
-2. Checks file existence
-3. Creates a directory with multiple files
-4. Lists directory contents
-5. Gets file statistics
-6. Processes file data
-7. Cleans up everything automatically
+1. Reads a file and checks if it exists (null = doesn't exist)
+2. Lists directory contents (trailing `/`)
+3. Writes files with auto-created parent directories
+4. Creates empty directories
+5. Removes files and directories recursively
+6. Demonstrates idempotent removal
 
-**Unique Feature:** The `file` API is **globally available** - no `require('fs')` needed!
+**Unique Features:**
+- The `files` API is **globally available** - no `require('fs')` needed!
+- **Convention-based**: trailing `/` for directories
+- **3 methods** instead of 8+ traditional methods
+- **Smart defaults**: auto-creates parent directories, null for existence checks
+
+---
+
+### 4b. `files_promise.js` ✨ **NEW!**
+**Simplified files API using promises and async/await**
+
+Same file operations as `files_basic.js` but using modern promise syntax:
+- Callback style → `files.read(path, callback)`
+- Promise style → `await files.read(path)`
+
+**Run time:** ~200ms  
+**Side effects:** Creates and deletes temporary files/directories (auto-cleanup)
+
+```bash
+./dougless examples/files_promise.js
+```
+
+**What it does:**
+1. All file operations using async/await (much cleaner!)
+2. Demonstrates Promise.all() for parallel operations
+3. Shows both sequential and parallel file processing
+4. Error handling with try/catch blocks
+
+**Key Features:**
+- ✅ **Cleaner code** - async/await instead of nested callbacks
+- ✅ **Parallel operations** - Promise.all() for concurrent file I/O
+- ✅ **Better error handling** - try/catch instead of error-first callbacks
+- ✅ **Same API** - just omit the callback to get a Promise!
 
 ---
 
@@ -256,7 +282,8 @@ Shows the interactive permission model:
 - `timers.js` - setTimeout & setInterval
 
 ### Global APIs (Unique to Dougless)
-- `file_operations.js` - File system (global `file`)
+- `files_basic.js` - File system callbacks (global `files`)
+- `files_promise.js` - File system promises (global `files`) ✨ **NEW!**
 - `http_demo.js` - HTTP client/server (global `http`)
 - `path_examples.js` - Path manipulation (global `path`)
 
@@ -302,11 +329,12 @@ Shows the interactive permission model:
 2. **`console_features.js`** - Learn debugging and output
 3. **`timers.js`** - Understand async operations
 4. **`path_examples.js`** - Work with file paths
-5. **`file_operations.js`** - Read/write files
-6. **`sourcemap_examples.js`** - ES6+ and transpilation
-7. **`test-promise.js`** - Modern async with Promises
-8. **`http_demo.js`** - Build web applications
-9. **`websocket_simple.js`** - Real-time communication
+5. **`files_basic.js`** - Read/write files (callback style)
+6. **`files_promise.js`** - Read/write files (async/await style) ✨
+7. **`sourcemap_examples.js`** - ES6+ and transpilation
+8. **`test-promise.js`** - Modern async with Promises
+9. **`http_demo.js`** - Build web applications
+10. **`websocket_simple.js`** - Real-time communication
 
 ---
 
@@ -320,9 +348,13 @@ Unlike Node.js, Dougless makes common APIs globally available:
 const fs = require('fs');
 const http = require('http');
 
-// Dougless way
-file.read('data.txt', callback);  // Already global!
-http.get(url, callback);          // Already global!
+// Dougless way (callback style)
+files.read('data.txt', (err, content) => { ... });  // Already global!
+http.get(url, callback);                            // Already global!
+
+// Dougless way (promise style) ✨
+const content = await files.read('data.txt');  // No require, no wrapping!
+const response = await http.get(url);          // Coming soon!
 ```
 
 ### Event Loop
