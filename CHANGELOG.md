@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Recent Updates - October 15, 2024 (Latest)
+
+#### Changed - File System API Simplification ⚡
+- **Unified `files` API** - Simplified from 8 methods to 3 smart methods
+  - **Breaking Change**: Renamed global from `file` → `files`
+  - Convention-based routing using path patterns
+  - 62% reduction in API surface while maintaining full functionality
+  
+- **New `files.read(path, callback)` Method**
+  - **Trailing `/`**: Reads directory → returns `string[]` of names
+  - **No trailing `/`**: Reads file → returns `string` content
+  - **File doesn't exist**: Returns `null` (doubles as exists check)
+  - Replaces: `file.read()`, `file.readdir()`, `file.exists()`
+  
+- **New `files.write(path, [content], callback)` Method**
+  - **2 args** (path with `/`): Creates directory recursively
+  - **3 args** (path + content): Writes file (auto-creates parent dirs)
+  - Smart detection based on path conventions
+  - Replaces: `file.write()`, `file.mkdir()`
+  
+- **New `files.rm(path, callback)` Method**
+  - **Unified removal**: Deletes files OR directories recursively
+  - Uses `os.RemoveAll()` under the hood
+  - Handles non-existent paths gracefully
+  - Replaces: `file.unlink()`, `file.rmdir()`
+  
+- **Removed Methods**: `file.stat()` (may return in future if needed)
+
+- **Migration Path**:
+  ```javascript
+  // OLD → NEW
+  file.read(path, cb)           → files.read(path, cb)
+  file.write(path, data, cb)    → files.write(path, data, cb)
+  file.readdir(path, cb)        → files.read(path + '/', cb)
+  file.mkdir(path, cb)          → files.write(path + '/', cb)
+  file.rmdir(path, cb)          → files.rm(path, cb)
+  file.unlink(path, cb)         → files.rm(path, cb)
+  file.exists(path, cb)         → files.read(path, cb) // null check
+  ```
+
 ### Recent Updates - October 15, 2024 (Continued)
 
 #### Cleanup & Code Quality
@@ -218,7 +258,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Phase 2] - October 2024 - COMPLETE ✅
+## [Phase 2] - October 2024 - COMPLETE ✅ **[UPDATED OCT 15, 2024]**
 
 ### Path Module (Global API)
 - **Unique Dougless Feature**: `path` object available globally (no require needed)
@@ -232,19 +272,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Cross-platform compatibility (Windows/Unix)
   - Backward compatible: `require('path')` still supported
 
-### File System Module (Global API)
-- **Unique Dougless Feature**: `file` object available globally (no require needed)
-- **Async Operations** (callback-based)
-  - `file.read(path, callback)` - Read file contents
-  - `file.write(path, data, callback)` - Write data to file
-  - `file.readdir(path, callback)` - List directory contents
-  - `file.exists(path, callback)` - Check if file/directory exists
-  - `file.mkdir(path, callback)` - Create directory
-  - `file.rmdir(path, callback)` - Remove empty directory
-  - `file.unlink(path, callback)` - Delete file
-  - `file.stat(path, callback)` - Get file/directory information (size, timestamps, type)
+### File System Module (Global API) - **SIMPLIFIED OCT 15, 2024**
+- **Unique Dougless Feature**: `files` object available globally (no require needed)
+- **Simplified 3-Method API** (convention-based)
+  - `files.read(path, callback)` - Read file OR list directory (trailing `/`)
+    - Returns `null` (not error) when file doesn't exist
+    - Replaces: read, readdir, exists
+  - `files.write(path, [content], callback)` - Write file OR create directory
+    - Auto-creates parent directories for file writes
+    - Replaces: write, mkdir
+  - `files.rm(path, callback)` - Remove file OR directory (recursive)
+    - Idempotent - no error if path doesn't exist
+    - Replaces: unlink, rmdir
+- **62% Reduction**: 8 methods → 3 methods
 - **Event Loop Integration** - All operations properly scheduled on event loop
-- **Simplified API** - Shorter method names (`read` vs `readFile`)
+- **Smart Defaults** - Convention over configuration design
 
 ### Architecture Improvements
 - Modules can access event loop for async operations
