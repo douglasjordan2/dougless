@@ -136,8 +136,8 @@ type Module interface {
 ```
 
 Modules are registered in the registry and accessed via `require()`. Current modules:
-- **path**: Path manipulation utilities (require-able)
-- **file**: File system operations (global API)
+- **path**: Path manipulation utilities (global API)
+- **files**: Simplified file system operations (global API, 3 methods)
 - **http**: HTTP client/server functionality (global API)
 - **promise**: Promise/A+ implementation (global API)
 
@@ -195,11 +195,16 @@ Tasks can be scheduled with delays (timers) or executed immediately. The loop co
   - Special REPL commands (.help, .exit, .clear)
   - Proper error display
 
-### Phase 2 (File System & Modules) - COMPLETE ✅
+### Phase 2 (File System & Modules) - COMPLETE ✅ **[UPDATED OCT 15, 2024]**
 - ✅ Path module with full functionality (join, resolve, dirname, basename, extname)
-- ✅ File system module with async operations (read, write, readdir, exists, mkdir, rmdir, unlink, stat)
-- ✅ Unique global `file` API (no require needed)
+- ✅ **SIMPLIFIED** File system module with 3 smart methods (read, write, rm)
+- ✅ Unique global `files` API (no require needed)
+- ✅ Convention-based routing (trailing `/` for directories)
+- ✅ Auto-creation of parent directories for file writes
+- ✅ Unified removal (recursive by default)
+- ✅ Null-based existence checks (no separate exists() method)
 - ✅ Event loop integration for async file operations
+- ✅ 62% reduction in API surface (8 methods → 3 methods)
 
 ### Phase 3 (Networking & HTTP) - COMPLETE ✅
 - ✅ HTTP client implementation (GET, POST with callbacks)
@@ -351,4 +356,5 @@ See `docs/transpilation_strategy.md` for complete strategy details and `internal
 4. **Security Model**: Config-first permission system using `.douglessrc`/`.douglessrc.json`. Development mode uses two-step prompts (yes/no → add to config?) to build permissions incrementally. CLI flags are deprecated.
 5. **WebSocket Focus**: Core design goal is supporting real-time WebSocket applications.
 6. **Plugin System**: Custom plugin architecture planned for framework extensibility.
-7. **Global-First Design**: Core APIs (file, http, Promise) are available globally without require() - a unique Dougless feature.
+7. **Global-First Design**: Core APIs (files, http, Promise) are available globally without require() - a unique Dougless feature.
+8. **Simplified Files API**: 3-method convention-based file system (files.read/write/rm) instead of traditional 8+ method APIs.

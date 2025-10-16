@@ -157,11 +157,12 @@ go build -o dougless cmd/dougless/main.go
 Dougless has a unique API that sets it apart from Node.js, Deno, and Bun:
 
 ### Global File System Access
-Unlike Node.js which requires `const fs = require('fs')`, Dougless provides the `file` object globally:
+Dougless provides the global `files` object with a simplified, convention-based API:
 
 ```javascript
 // No require needed!
-file.read('data.txt', function(err, data) {
+// Read a file
+files.read('data.txt', function(err, data) {
     if (err) {
         console.error('Error:', err);
     } else {
@@ -169,15 +170,33 @@ file.read('data.txt', function(err, data) {
     }
 });
 
-file.write('output.txt', 'Hello Dougless!', function(err) {
+// Write a file (auto-creates parent directories)
+files.write('output.txt', 'Hello Dougless!', function(err) {
     if (err) console.error(err);
+});
+
+// Read a directory (note the trailing slash)
+files.read('src/', function(err, fileNames) {
+    if (!err) console.log('Files:', fileNames);
+});
+
+// Create a directory
+files.write('new-dir/', function(err) {
+    if (!err) console.log('Directory created');
+});
+
+// Delete a file or directory
+files.rm('old-file.txt', function(err) {
+    if (!err) console.log('Deleted');
 });
 ```
 
-### Simplified Method Names
-- `file.read()` instead of `fs.readFile()`
-- `file.write()` instead of `fs.writeFile()`
-- Clean, intuitive API design
+### Convention-Based API Design
+- **3 methods** instead of 8: `files.read()`, `files.write()`, `files.rm()`
+- **Trailing `/`** indicates directory operations
+- **Automatic parent directory creation** for file writes
+- **Unified removal** for files and directories
+- **Smart null handling** - missing files return `null` instead of error
 
 ### Global HTTP Access
 Unlike Node.js which requires `const http = require('http')`, Dougless provides the `http` object globally:
@@ -267,13 +286,13 @@ async function fetchData() {
 
 ### Always Available Globals
 ```javascript
-console.log('Logging');          // ✅ Built-in
-file.read('file.txt', callback); // ✅ Built-in
-http.get('http://...', callback);// ✅ Built-in
-setTimeout(callback, 1000);      // ✅ Built-in
-Promise.resolve(value);          // ✅ Built-in
+console.log('Logging');           // ✅ Built-in
+files.read('file.txt', callback); // ✅ Built-in
+http.get('http://...', callback); // ✅ Built-in
+setTimeout(callback, 1000);       // ✅ Built-in
+Promise.resolve(value);           // ✅ Built-in
 
-const path = require('path');    // Module system still available
+const path = require('path');     // Module system still available
 ```
 
 ## Project Structure
@@ -298,7 +317,7 @@ dougless-runtime/
 - **[ROADMAP.md](ROADMAP.md)** - Development phases, implementation status, and future plans
 - **[REPL Guide](docs/repl_guide.md)** - Complete guide to using the interactive REPL shell
 - **[Promises API Guide](docs/promises_api.md)** - Complete reference for Promises and async/await
-- **[File API Guide](docs/file_api.md)** - Complete reference for the global `file` API
+- **[File API Guide](docs/file_api.md)** - Complete reference for the global `files` API
 - **[HTTP API Guide](docs/http_api.md)** - Complete reference for the global `http` API
 - **[Changelog](CHANGELOG.md)** - Detailed history of changes and features
 

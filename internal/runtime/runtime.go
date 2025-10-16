@@ -170,9 +170,9 @@ func (rt *Runtime) transpile(source, filename string) (string, error) {
 //   - console (log, error, warn, time, timeEnd, table)
 //   - setTimeout, setInterval, clearTimeout, clearInterval
 //   - path (join, resolve, dirname, basename, extname, sep)
-//   - file (read, write, readdir, exists, mkdir, rmdir, unlink, stat)
+//   - files (read, write, rm) - Convention-based file system API
 //   - http (get, post, createServer)
-//   - Promise (constructor, resolve, reject, all, race)
+//   - Promise (constructor, resolve, reject, all, race, allSettled, any)
 //   - require() (for CommonJS-style module loading)
 func (rt *Runtime) initializeGlobals() {
 	// Console object
@@ -192,8 +192,8 @@ func (rt *Runtime) initializeGlobals() {
 	rt.vm.Set("path", path.Export(rt.vm))
 
 	// File system
-	fileSystem := modules.NewFileSystem(rt.eventLoop)
-	rt.vm.Set("file", fileSystem.Export(rt.vm))
+	files := modules.NewFiles(rt.eventLoop)
+	rt.vm.Set("files", files.Export(rt.vm))
 
 	// HTTP
 	httpClient := modules.NewHTTP(rt.eventLoop)
