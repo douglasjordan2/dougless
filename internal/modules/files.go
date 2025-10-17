@@ -3,7 +3,7 @@ package modules
 import (
 	"context"
 	"os"
-  "path/filepath"
+	"path/filepath"
 	"time"
 
 	"github.com/dop251/goja"
@@ -88,54 +88,54 @@ func (fs *Files) Export(vm *goja.Runtime) goja.Value {
 	return obj
 }
 
-func dirCheck(dest string) bool { 
-  return len(dest) > 0 && dest[len(dest)-1] == '/' 
+func dirCheck(dest string) bool {
+	return len(dest) > 0 && dest[len(dest)-1] == '/'
 }
 
 func (fs *Files) doRead(ctx context.Context, dest string) (goja.Value, goja.Value) {
-  mgr := permissions.GetManager()
-  canRead := permissions.PermissionRead
-  if !mgr.CheckWithPrompt(ctx, canRead, dest) {
-    errMsg := mgr.ErrorMessage(canRead, dest)
-    return fs.vm.ToValue(errMsg), goja.Undefined()
-  }
+	mgr := permissions.GetManager()
+	canRead := permissions.PermissionRead
+	if !mgr.CheckWithPrompt(ctx, canRead, dest) {
+		errMsg := mgr.ErrorMessage(canRead, dest)
+		return fs.vm.ToValue(errMsg), goja.Undefined()
+	}
 
-  isDir := dirCheck(dest)
+	isDir := dirCheck(dest)
 
-  _, statErr := os.Stat(dest)
-  if os.IsNotExist(statErr) {
-    // Path doesn't exist - return null data (not an error)
-    return goja.Null(), goja.Null()
-  }
+	_, statErr := os.Stat(dest)
+	if os.IsNotExist(statErr) {
+		// Path doesn't exist - return null data (not an error)
+		return goja.Null(), goja.Null()
+	}
 
-  var fileData []byte
-  var dirData []os.DirEntry
-  var err error
+	var fileData []byte
+	var dirData []os.DirEntry
+	var err error
 
-  if isDir {
-    dirData, err = os.ReadDir(dest)
-  } else {
-    fileData, err = os.ReadFile(dest)
-  }
+	if isDir {
+		dirData, err = os.ReadDir(dest)
+	} else {
+		fileData, err = os.ReadFile(dest)
+	}
 
-  var errArg, dataArg goja.Value
-  if err != nil {
-    errArg = fs.vm.ToValue(err.Error())
-    dataArg = goja.Undefined()
-  } else {
-    errArg = goja.Null()
-    if isDir {
-      names := make([]string, len(dirData))
-      for i, entry := range dirData {
-        names[i] = entry.Name()
-      }
-      dataArg = fs.vm.ToValue(names)
-    } else {
-      dataArg = fs.vm.ToValue(string(fileData))
-    }
-  }
+	var errArg, dataArg goja.Value
+	if err != nil {
+		errArg = fs.vm.ToValue(err.Error())
+		dataArg = goja.Undefined()
+	} else {
+		errArg = goja.Null()
+		if isDir {
+			names := make([]string, len(dirData))
+			for i, entry := range dirData {
+				names[i] = entry.Name()
+			}
+			dataArg = fs.vm.ToValue(names)
+		} else {
+			dataArg = fs.vm.ToValue(string(fileData))
+		}
+	}
 
-  return errArg, dataArg
+	return errArg, dataArg
 }
 
 // read implements the files.read() method.
@@ -153,11 +153,12 @@ func (fs *Files) doRead(ctx context.Context, dest string) (goja.Value, goja.Valu
 //   - Without callback: Promise<string | string[] | null>
 //
 // JavaScript Usage:
-//   // Callback style
-//   files.read('data.txt', (err, content) => { ... });
 //
-//   // Promise style
-//   const content = await files.read('data.txt');
+//	// Callback style
+//	files.read('data.txt', (err, content) => { ... });
+//
+//	// Promise style
+//	const content = await files.read('data.txt');
 //
 // Returns null (not error) when file doesn't exist, perfect for existence checks.
 // Requires PermissionRead for the specified path.
@@ -174,74 +175,74 @@ func (fs *Files) read(call goja.FunctionCall) goja.Value {
 		callback, ok = goja.AssertFunction(call.Arguments[1])
 	}
 	if !ok {
-    promise := &Promise{
-      vm:          fs.vm,
-      eventLoop:   fs.eventLoop,
-      state:       PromisePending,
-      onFulfilled: []goja.Callable{},
-      onRejected:  []goja.Callable{},
-    }
+		promise := &Promise{
+			vm:          fs.vm,
+			eventLoop:   fs.eventLoop,
+			state:       PromisePending,
+			onFulfilled: []goja.Callable{},
+			onRejected:  []goja.Callable{},
+		}
 
-    fs.eventLoop.ScheduleTask(&event.Task{
-      Callback: func() {
-        ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-        defer cancel()
+		fs.eventLoop.ScheduleTask(&event.Task{
+			Callback: func() {
+				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+				defer cancel()
 
-        errArg, dataArg := fs.doRead(ctx, dest)
+				errArg, dataArg := fs.doRead(ctx, dest)
 
-        if errArg != goja.Null() && !goja.IsNull(errArg) {
-          promise.reject(errArg)
-        } else {
-          promise.resolve(dataArg)
-        }
-      },
-    })
+				if errArg != goja.Null() && !goja.IsNull(errArg) {
+					promise.reject(errArg)
+				} else {
+					promise.resolve(dataArg)
+				}
+			},
+		})
 
-    return CreatePromiseObject(fs.vm, promise)
+		return CreatePromiseObject(fs.vm, promise)
 	}
 
 	fs.eventLoop.ScheduleTask(&event.Task{
 		Callback: func() {
-      ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-      defer cancel()
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
 
-      errArg, dataArg := fs.doRead(ctx, dest)
-      callback(goja.Undefined(), errArg, dataArg)
+			errArg, dataArg := fs.doRead(ctx, dest)
+			callback(goja.Undefined(), errArg, dataArg)
 		},
 	})
 
 	return goja.Undefined()
 }
 
-func (fs *Files) doWrite(ctx context.Context, dest string, data string) (goja.Value) {
-  mgr := permissions.GetManager()
-  canWrite := permissions.PermissionWrite
-  if !mgr.CheckWithPrompt(ctx, canWrite, dest) {
-    errMsg := mgr.ErrorMessage(canWrite, dest)
-    return fs.vm.ToValue(errMsg)
-  }
+func (fs *Files) doWrite(ctx context.Context, dest string, data string) goja.Value {
+	mgr := permissions.GetManager()
+	canWrite := permissions.PermissionWrite
+	if !mgr.CheckWithPrompt(ctx, canWrite, dest) {
+		errMsg := mgr.ErrorMessage(canWrite, dest)
+		return fs.vm.ToValue(errMsg)
+	}
 
-  isDir := dirCheck(dest)
+	isDir := dirCheck(dest)
 
-  var err error
-  if isDir {
-    err = os.MkdirAll(dest, 0755) 
-  } else {
-    // Create parent directories if needed
-    if mkdirErr := os.MkdirAll(filepath.Dir(dest), 0755); mkdirErr != nil {
-      return fs.vm.ToValue(mkdirErr.Error())
-    }
-    err = os.WriteFile(dest, []byte(data), 0644)
-  }
+	var err error
+	if isDir {
+		err = os.MkdirAll(dest, 0755)
+	} else {
+		// Create parent directories if needed
+		if mkdirErr := os.MkdirAll(filepath.Dir(dest), 0755); mkdirErr != nil {
+			return fs.vm.ToValue(mkdirErr.Error())
+		}
+		err = os.WriteFile(dest, []byte(data), 0644)
+	}
 
-  var errArg goja.Value
-  if err != nil {
-    errArg = fs.vm.ToValue(err.Error())
-  } else {
-    errArg = goja.Null()
-  }
+	var errArg goja.Value
+	if err != nil {
+		errArg = fs.vm.ToValue(err.Error())
+	} else {
+		errArg = goja.Null()
+	}
 
-  return errArg
+	return errArg
 }
 
 // write implements the files.write() method.
@@ -260,17 +261,18 @@ func (fs *Files) doWrite(ctx context.Context, dest string, data string) (goja.Va
 //   - Without callback: Promise<void>
 //
 // JavaScript Usage:
-//   // Write file with content
-//   await files.write('output.txt', 'data');
-//   files.write('output.txt', 'data', (err) => { ... });
 //
-//   // Create empty file (like 'touch')
-//   await files.write('empty.txt');
-//   files.write('empty.txt', (err) => { ... });
+//	// Write file with content
+//	await files.write('output.txt', 'data');
+//	files.write('output.txt', 'data', (err) => { ... });
 //
-//   // Create directory
-//   await files.write('new-dir/');
-//   files.write('new-dir/', (err) => { ... });
+//	// Create empty file (like 'touch')
+//	await files.write('empty.txt');
+//	files.write('empty.txt', (err) => { ... });
+//
+//	// Create directory
+//	await files.write('new-dir/');
+//	files.write('new-dir/', (err) => { ... });
 //
 // Parent directories are created automatically for file writes.
 // Requires PermissionWrite for the specified path.
@@ -280,71 +282,71 @@ func (fs *Files) write(call goja.FunctionCall) goja.Value {
 	}
 
 	dest := call.Arguments[0].String()
-  isDir := dirCheck(dest)
-  data := ""  // Default to empty string for files
+	isDir := dirCheck(dest)
+	data := "" // Default to empty string for files
 
-  var callback goja.Callable
-  var ok bool
-  
-  if isDir {
-    // Directory creation: write('path/', [callback])
-    if len(call.Arguments) > 1 {
-      callback, ok = goja.AssertFunction(call.Arguments[1])
-    }
-  } else {
-    // File write: write('path', [content], [callback])
-    // Check argument 1: could be content (string) or callback (function)
-    if len(call.Arguments) > 1 {
-      // Try to get as string first (content)
-      if !goja.IsUndefined(call.Arguments[1]) && !goja.IsNull(call.Arguments[1]) {
-        callback, ok = goja.AssertFunction(call.Arguments[1])
-        if !ok {
-          // It's content, not a callback
-          data = call.Arguments[1].String()
-          // Check for callback in argument 2
-          if len(call.Arguments) > 2 {
-            callback, ok = goja.AssertFunction(call.Arguments[2])
-          }
-        }
-      }
-    }
-  }
+	var callback goja.Callable
+	var ok bool
 
-  if !ok {
-    // Promise path
-    promise := &Promise{
-      vm:          fs.vm,
-      eventLoop:   fs.eventLoop,
-      state:       PromisePending,
-      onFulfilled: []goja.Callable{},
-      onRejected:  []goja.Callable{},
-    }
+	if isDir {
+		// Directory creation: write('path/', [callback])
+		if len(call.Arguments) > 1 {
+			callback, ok = goja.AssertFunction(call.Arguments[1])
+		}
+	} else {
+		// File write: write('path', [content], [callback])
+		// Check argument 1: could be content (string) or callback (function)
+		if len(call.Arguments) > 1 {
+			// Try to get as string first (content)
+			if !goja.IsUndefined(call.Arguments[1]) && !goja.IsNull(call.Arguments[1]) {
+				callback, ok = goja.AssertFunction(call.Arguments[1])
+				if !ok {
+					// It's content, not a callback
+					data = call.Arguments[1].String()
+					// Check for callback in argument 2
+					if len(call.Arguments) > 2 {
+						callback, ok = goja.AssertFunction(call.Arguments[2])
+					}
+				}
+			}
+		}
+	}
 
-    fs.eventLoop.ScheduleTask(&event.Task{
-      Callback: func() {
-        ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-        defer cancel()
+	if !ok {
+		// Promise path
+		promise := &Promise{
+			vm:          fs.vm,
+			eventLoop:   fs.eventLoop,
+			state:       PromisePending,
+			onFulfilled: []goja.Callable{},
+			onRejected:  []goja.Callable{},
+		}
 
-        errArg := fs.doWrite(ctx, dest, data)
+		fs.eventLoop.ScheduleTask(&event.Task{
+			Callback: func() {
+				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+				defer cancel()
 
-        if errArg != goja.Null() && !goja.IsNull(errArg) {
-          promise.reject(errArg)
-        } else {
-          promise.resolve(goja.Null())
-        }
-      },
-    })
+				errArg := fs.doWrite(ctx, dest, data)
 
-    return CreatePromiseObject(fs.vm, promise)
-  }
+				if errArg != goja.Null() && !goja.IsNull(errArg) {
+					promise.reject(errArg)
+				} else {
+					promise.resolve(goja.Null())
+				}
+			},
+		})
 
-  // Callback path
+		return CreatePromiseObject(fs.vm, promise)
+	}
+
+	// Callback path
 	fs.eventLoop.ScheduleTask(&event.Task{
 		Callback: func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
 
-      errArg := fs.doWrite(ctx, dest, data)
+			errArg := fs.doWrite(ctx, dest, data)
 			callback(goja.Undefined(), errArg)
 		},
 	})
@@ -352,24 +354,24 @@ func (fs *Files) write(call goja.FunctionCall) goja.Value {
 	return goja.Undefined()
 }
 
-func (fs *Files) doRm(ctx context.Context, path string) (goja.Value) {
-  mgr := permissions.GetManager()
-  canWrite := permissions.PermissionWrite
-  if !mgr.CheckWithPrompt(ctx, canWrite, path) {
-    errMsg := mgr.ErrorMessage(canWrite, path)
-    return fs.vm.ToValue(errMsg)
-  }
+func (fs *Files) doRm(ctx context.Context, path string) goja.Value {
+	mgr := permissions.GetManager()
+	canWrite := permissions.PermissionWrite
+	if !mgr.CheckWithPrompt(ctx, canWrite, path) {
+		errMsg := mgr.ErrorMessage(canWrite, path)
+		return fs.vm.ToValue(errMsg)
+	}
 
-  err := os.RemoveAll(path)
+	err := os.RemoveAll(path)
 
-  var errArg goja.Value
-  if err != nil {
-    errArg = fs.vm.ToValue(err.Error())
-  } else {
-    errArg = goja.Null()
-  }
+	var errArg goja.Value
+	if err != nil {
+		errArg = fs.vm.ToValue(err.Error())
+	} else {
+		errArg = goja.Null()
+	}
 
-  return errArg
+	return errArg
 }
 
 // rm implements the files.rm() method.
@@ -387,11 +389,12 @@ func (fs *Files) doRm(ctx context.Context, path string) (goja.Value) {
 //   - Without callback: Promise<void>
 //
 // JavaScript Usage:
-//   // Callback style
-//   files.rm('temp.txt', (err) => { ... });
 //
-//   // Promise style
-//   await files.rm('temp.txt');
+//	// Callback style
+//	files.rm('temp.txt', (err) => { ... });
+//
+//	// Promise style
+//	await files.rm('temp.txt');
 //
 // Uses os.RemoveAll() under the hood for recursive removal.
 // Requires PermissionWrite for the specified path.
@@ -407,40 +410,40 @@ func (fs *Files) rm(call goja.FunctionCall) goja.Value {
 		callback, ok = goja.AssertFunction(call.Arguments[1])
 	}
 	if !ok {
-    // Promise path
-    promise := &Promise{
-      vm:          fs.vm,
-      eventLoop:   fs.eventLoop,
-      state:       PromisePending,
-      onFulfilled: []goja.Callable{},
-      onRejected:  []goja.Callable{},
-    }
+		// Promise path
+		promise := &Promise{
+			vm:          fs.vm,
+			eventLoop:   fs.eventLoop,
+			state:       PromisePending,
+			onFulfilled: []goja.Callable{},
+			onRejected:  []goja.Callable{},
+		}
 
-    fs.eventLoop.ScheduleTask(&event.Task{
-      Callback: func() {
-        ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-        defer cancel()
+		fs.eventLoop.ScheduleTask(&event.Task{
+			Callback: func() {
+				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+				defer cancel()
 
-        errArg := fs.doRm(ctx, path)
+				errArg := fs.doRm(ctx, path)
 
-        if errArg != goja.Null() && !goja.IsNull(errArg) {
-          promise.reject(errArg)
-        } else {
-          promise.resolve(goja.Null())
-        }
-      },
-    })
+				if errArg != goja.Null() && !goja.IsNull(errArg) {
+					promise.reject(errArg)
+				} else {
+					promise.resolve(goja.Null())
+				}
+			},
+		})
 
-    return CreatePromiseObject(fs.vm, promise)
+		return CreatePromiseObject(fs.vm, promise)
 	}
 
-  // Callback path
+	// Callback path
 	fs.eventLoop.ScheduleTask(&event.Task{
 		Callback: func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
 
-      errArg := fs.doRm(ctx, path)
+			errArg := fs.doRm(ctx, path)
 
 			callback(goja.Undefined(), errArg)
 		},

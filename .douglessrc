@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "read": [
+      "./examples",
+      "/tmp",
+      "nonexistent.txt",
+      "config.json"
+    ],
+    "write": [
+      "/tmp"
+    ],
+    "net": null,
+    "env": null,
+    "run": null
+  }
+}

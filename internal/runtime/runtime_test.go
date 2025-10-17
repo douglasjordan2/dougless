@@ -444,10 +444,10 @@ func TestClearTimeout(t *testing.T) {
 func TestModuleRequire(t *testing.T) {
 	rt := New()
 
-	t.Run("global file API available", func(t *testing.T) {
+	t.Run("global files API available", func(t *testing.T) {
 		script := `
 			// File system is globally available (not via require)
-			const fileAvailable = typeof file === 'object';
+			const filesAvailable = typeof files === 'object';
 		`
 
 		err := rt.Execute(script, "test.js")
@@ -455,22 +455,22 @@ func TestModuleRequire(t *testing.T) {
 			t.Fatalf("Execute() error = %v", err)
 		}
 
-		// Verify the global file object is available
-		result, err := rt.vm.RunString("fileAvailable")
+		// Verify the global files object is available
+		result, err := rt.vm.RunString("filesAvailable")
 		if err != nil {
-			t.Fatalf("Failed to check file availability: %v", err)
+			t.Fatalf("Failed to check files availability: %v", err)
 		}
 
 		if !result.ToBoolean() {
-			t.Error("global 'file' object should be available")
+			t.Error("global 'files' object should be available")
 		}
 	})
 
-	t.Run("file API has expected methods", func(t *testing.T) {
+	t.Run("files API has expected methods", func(t *testing.T) {
 		script := `
-			const hasRead = typeof file.read === 'function';
-			const hasWrite = typeof file.write === 'function';
-			const hasExists = typeof file.exists === 'function';
+			const hasRead = typeof files.read === 'function';
+			const hasWrite = typeof files.write === 'function';
+			const hasRm = typeof files.rm === 'function';
 		`
 
 		err := rt.Execute(script, "test.js")
@@ -481,16 +481,16 @@ func TestModuleRequire(t *testing.T) {
 		// Check each method
 		hasRead, _ := rt.vm.RunString("hasRead")
 		hasWrite, _ := rt.vm.RunString("hasWrite")
-		hasExists, _ := rt.vm.RunString("hasExists")
+		hasRm, _ := rt.vm.RunString("hasRm")
 
 		if !hasRead.ToBoolean() {
-			t.Error("file.read should be a function")
+			t.Error("files.read should be a function")
 		}
 		if !hasWrite.ToBoolean() {
-			t.Error("file.write should be a function")
+			t.Error("files.write should be a function")
 		}
-		if !hasExists.ToBoolean() {
-			t.Error("file.exists should be a function")
+		if !hasRm.ToBoolean() {
+			t.Error("files.rm should be a function")
 		}
 	})
 

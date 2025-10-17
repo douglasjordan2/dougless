@@ -14,12 +14,18 @@ All core async features, promises, and ES6+ transpilation are fully implemented,
 
 ## Recently Completed
 
+- ✅ **Config-Based Permissions System** - Project-centric permission model (Oct 17, 2025)
+  - `.douglessrc` JSON configuration files
+  - Per-project permission definitions (read, write, net, env, run)
+  - Automatic config discovery from script directory
+  - Cleaner alternative to CLI flags
+  - Version-controlled permissions with project code
 - ✅ **Phase 5: Promises & ES6+** - Full Promise/A+ implementation with all static methods (Oct 15, 2024)
   - Promise.all(), Promise.race(), Promise.allSettled(), Promise.any()
   - ES6+ transpilation with esbuild (arrow functions, async/await, classes, etc.)
   - Inline source maps for accurate error reporting
-- ✅ **Permissions System** - Interactive prompts with context-aware security
-- ✅ **WebSocket** implementation for real-time applications
+- ✅ **Interactive Permissions System** - Context-aware prompts with session caching
+- ✅ **Phase 6: WebSockets & Real-time** - Full WebSocket server implementation
 
 ## Development Phases
 
@@ -147,51 +153,40 @@ While the core permissions system is complete, these enhancements will improve u
 - ⏳ Usage examples in help output
 - ⏳ Version information (`--version` flag)
 
-### Configuration File Support (Config-First Permission Model)
+### Configuration File Support (Config-First Permission Model) ✅ **COMPLETE**
 
-**Vision**: Deprecate CLI flags in favor of a cleaner, more project-centric permission model that distinguishes Dougless from Deno.
+**Vision**: Deprecate CLI flags in favor of a cleaner, more project-centric permission model using configuration files.
 
 #### Production Mode
-- ⏳ Permissions defined **exclusively** in `.douglessrc` or `.douglessrc.json`
-- ⏳ No interactive prompts in production environments
-- ⏳ Clear error messages pointing to config file when permissions missing
-- ⏳ Validate config file on startup for security
-
-#### Development Mode (Two-Step Interactive Prompt Flow)
-- ⏳ **Step 1**: `Allow [operation]? yes/no`
-  - `yes` = Grant permission for current session only
-  - `no` = Deny and throw permission error
-- ⏳ **Step 2** (if user said 'yes'): `Add to .douglessrc? yes/no`
-  - `yes` = Append permission to `.douglessrc` file (create if doesn't exist)
-  - `no` = Permission valid for this session only
-- ⏳ This allows developers to build their `.douglessrc` incrementally during development
-- ⏳ Makes permission decisions explicit and persistent when desired
+- ✅ Permissions defined in `.douglessrc` JSON configuration file
+- ✅ Config file discovery from script directory
+- ✅ Clear error messages for missing or malformed configs
+- ✅ JSON parsing with validation
 
 #### Configuration File Format
-- ⏳ `.douglessrc` - Primary config format (JSON)
-- ⏳ `.douglessrc.json` - Alternative explicit JSON extension
-- ⏳ JSON schema for storing default permissions:
+- ✅ `.douglessrc` - Primary config format (JSON)
+- ✅ JSON schema for storing default permissions:
   ```json
   {
     "permissions": {
       "read": ["/data", "./config"],
       "write": ["./output", "./logs"],
       "net": ["api.example.com", "localhost:3000"],
-      "env": ["API_KEY", "DATABASE_URL"]
+      "env": ["API_KEY", "DATABASE_URL"],
+      "run": ["git", "npm"]
     }
   }
   ```
-- ⏳ Per-project permission profiles
-- ⏳ Cascading config (global `~/.douglessrc` → project `.douglessrc` → command line overrides)
-- ⏳ Config file validation and error reporting
+- ✅ Per-project permission profiles
+- ✅ Config file validation and error reporting
+
+#### Future Enhancements
+- ⏳ Two-step interactive prompt flow to build `.douglessrc` during development
+- ⏳ `.douglessrc.json` - Alternative explicit JSON extension support
+- ⏳ Cascading config (global `~/.douglessrc` → project `.douglessrc`)
 - ⏳ `dougless init` command to generate config template
 - ⏳ Comments support in config (use JSONC parser)
-
-#### CLI Flag Deprecation
-- ⏳ Mark `--allow-*` flags as deprecated (keep for backward compatibility initially)
-- ⏳ Show deprecation warnings when CLI flags used
-- ⏳ Encourage migration to `.douglessrc` via helpful messages
-- ⏳ Eventually remove CLI flags in major version bump
+- ⏳ CLI flag deprecation warnings
 
 ### Advanced Features
 - ⏳ Persistent permission cache across runs

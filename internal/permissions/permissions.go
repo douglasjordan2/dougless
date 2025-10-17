@@ -69,6 +69,8 @@ type Manager struct {
 	allowNet      *[]string                  // Allowed network hosts
 	allowEnv      *[]string                  // Allowed environment variables
 	allowRun      *[]string                  // Allowed programs to execute
+	config        *Config                    // Loaded .douglessrc configuration (if any)
+	configPath    string                     // Path to .douglessrc file (for saving)
 	promptMode    bool                       // Whether to prompt for permissions
 	prompter      Prompter                   // Interface for prompting user
 	promptCache   map[string]PermissionState // Cache of user responses
@@ -170,10 +172,71 @@ func (m *Manager) SetPromptMode(enabled bool) {
 	m.promptMode = enabled
 }
 
+// SetConfig sets the .douglessrc configuration for this manager.
+// Config permissions are checked before CLI flags and prompts.
+func (m *Manager) SetConfig(config *Config) {
+	m.config = config
+}
+
+// SetConfigPath sets the path to the .douglessrc file for saving permissions.
+func (m *Manager) SetConfigPath(path string) {
+	m.configPath = path
+}
+
+// checkConfig checks if the config grants the requested permission.
+// Returns true if config exists and contains the resource, false otherwise.
+func (m *Manager) checkConfig(perm Permission, resource string) bool {
+	if m.config == nil {
+		return false
+	}
+
+	var paths []string
+	switch perm {
+	case PermissionRead:
+		paths = m.config.Permissions.Read
+	case PermissionWrite:
+		paths = m.config.Permissions.Write
+	case PermissionNet:
+		paths = m.config.Permissions.Net
+	case PermissionEnv:
+		paths = m.config.Permissions.Env
+	case PermissionRun:
+		paths = m.config.Permissions.Run
+	default:
+		return false
+	}
+
+	if len(paths) == 0 {
+		return false
+	}
+	for _, allowed := range paths {
+		var matches bool
+		switch perm {
+		case PermissionRead, PermissionWrite:
+			matches = matchPath(allowed, resource)
+		case PermissionNet:
+			matches = matchHost(allowed, resource)
+		case PermissionEnv, PermissionRun:
+			matches = matchExact(allowed, resource)
+		}
+
+		if matches {
+			return true
+		}
+	}
+
+	return false
+}
+
 // Check verifies if a permission is granted for the specified resource.
 // Returns true if the permission is explicitly granted, false otherwise.
 // This method does NOT trigger interactive prompts.
+// Checks config first, then CLI flags
 func (m *Manager) Check(perm Permission, resource string) bool {
+	if m.checkConfig(perm, resource) {
+		return true
+	}
+
 	switch perm {
 	case PermissionRead:
 		return m.checkPermission(m.allowRead, resource, matchPath)
@@ -449,16 +512,22 @@ func (m *Manager) CheckWithPrompt(ctx context.Context, perm Permission, resource
 		return false
 	}
 
-	if response.Permanent {
-		state := StateDenied
-		if response.Granted {
-			state = StateGranted
-		}
-
-		m.promptCacheMu.Lock()
-		m.promptCache[key] = state
-		m.promptCacheMu.Unlock()
+	state := StateDenied
+	if response.Granted {
+		state = StateGranted
 	}
+
+	// Save to config if requested
+	if response.SaveToConfig {
+		if err := SavePermissionToConfig(m.configPath, perm, resource); err != nil {
+			// Log error but don't fail the permission grant
+			fmt.Fprintf(os.Stderr, "Warning: Failed to save to .douglessrc: %v\n", err)
+		}
+	}
+
+	m.promptCacheMu.Lock()
+	m.promptCache[key] = state
+	m.promptCacheMu.Unlock()
 
 	return response.Granted
 }
