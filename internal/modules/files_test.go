@@ -1209,7 +1209,7 @@ func TestFilesRead_Promise_PermissionDenied(t *testing.T) {
 
 	promiseObj := promiseVal.ToObject(vm)
 	var (
-		rejectWg   sync.WaitGroup
+		rejectWg    sync.WaitGroup
 		gotRejected bool
 		rejection   goja.Value
 	)

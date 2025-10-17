@@ -28,6 +28,7 @@ import (
 
 	"github.com/douglasjordan2/dougless/internal/event"
 	"github.com/douglasjordan2/dougless/internal/modules"
+	"github.com/douglasjordan2/dougless/internal/permissions"
 )
 
 // Runtime represents the JavaScript execution environment.
@@ -39,6 +40,7 @@ type Runtime struct {
 	modules   *modules.Registry    // Registry of loadable modules
 	timers    map[string]time.Time // Timer tracking for console.time()
 	timersMu  sync.Mutex           // Protects timers map
+	config    *permissions.Config  // Loaded .douglessrc configuration
 }
 
 // New creates and initializes a new Runtime instance.
@@ -57,11 +59,32 @@ func New() *Runtime {
 	eventLoop := event.NewLoop()
 	moduleRegistry := modules.NewRegistry()
 
+	var config *permissions.Config
+	var configPath string
+	foundPath, err := permissions.FindConfig(".")
+	if err == nil {
+		configPath = foundPath
+		config, err = permissions.LoadConfig(configPath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: Failed to load .douglessrc: %v\n", err)
+		}
+	}
+
 	rt := &Runtime{
 		vm:        vm,
 		eventLoop: eventLoop,
 		modules:   moduleRegistry,
 		timers:    make(map[string]time.Time),
+		config:    config,
+	}
+
+	// Set config and config path on global permission manager
+	permManager := permissions.GetManager()
+	if config != nil {
+		permManager.SetConfig(config)
+	}
+	if configPath != "" {
+		permManager.SetConfigPath(configPath)
 	}
 
 	rt.initializeGlobals()

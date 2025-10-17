@@ -54,14 +54,17 @@ func TestCompleteJavaScriptProgram(t *testing.T) {
 		
 		// 5. File system and module test
 		// File system is globally available (unique to Dougless)
-		if (typeof file === 'object') {
-			console.log('✓ file global API available');
+		if (typeof files === 'object') {
+			console.log('✓ files global API available');
 		}
-		if (typeof file.read === 'function') {
-			console.log('✓ file.read available');
+		if (typeof files.read === 'function') {
+			console.log('✓ files.read available');
 		}
-		if (typeof file.write === 'function') {
-			console.log('✓ file.write available');
+		if (typeof files.write === 'function') {
+			console.log('✓ files.write available');
+		}
+		if (typeof files.rm === 'function') {
+			console.log('✓ files.rm available');
 		}
 		
 		// Module system (require)
@@ -106,9 +109,10 @@ func TestCompleteJavaScriptProgram(t *testing.T) {
 		"✓ setInterval function available:",
 		"✓ clearTimeout function available:",
 		"✓ clearInterval function available:",
-		"✓ file global API available",
-		"✓ file.read available",
-		"✓ file.write available",
+		"✓ files global API available",
+		"✓ files.read available",
+		"✓ files.write available",
+		"✓ files.rm available",
 		"✓ path module loaded via require",
 		"=== Test Completed ===",
 	}
@@ -305,21 +309,21 @@ func TestModuleSystemIntegration(t *testing.T) {
 	rt := runtime.New()
 
 	script := `
-		// Test global file API (unique to Dougless - not via require)
-		if (typeof file !== 'object') {
-			console.error('file global API not available');
+		// Test global files API (unique to Dougless - not via require)
+		if (typeof files !== 'object') {
+			console.error('files global API not available');
 		}
 		
-		if (typeof file.read !== 'function') {
-			console.error('file.read not a function');
+		if (typeof files.read !== 'function') {
+			console.error('files.read not a function');
 		}
 		
-		if (typeof file.write !== 'function') {
-			console.error('file.write not a function');
+		if (typeof files.write !== 'function') {
+			console.error('files.write not a function');
 		}
 		
-		if (typeof file.exists !== 'function') {
-			console.error('file.exists not a function');
+		if (typeof files.rm !== 'function') {
+			console.error('files.rm not a function');
 		}
 		
 		// Test require() module system

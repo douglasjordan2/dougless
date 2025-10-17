@@ -13,8 +13,8 @@ import (
 
 // PromptResponse represents the user's response to a permission prompt.
 type PromptResponse struct {
-	Granted   bool // Whether the permission was granted
-	Permanent bool // Whether to cache this decision ("always" response)
+	Granted      bool // Whether the permission was granted
+	SaveToConfig bool // Whether to write to .douglessrc
 }
 
 // Prompter is the interface for prompting users for permissions.
@@ -35,7 +35,8 @@ func NewStdioPrompter() *StdioPrompter {
 }
 
 // Prompt displays a permission request and waits for user input.
-// Accepts responses: y/yes (temporary), a/always (permanent), or any other (deny).
+// Accepts responses: y/yes (grant), or any other (deny).
+// If granted, prompts whether to save to .douglessrc.
 // Respects context cancellation and timeouts.
 //
 // The prompt is displayed on stderr to avoid interfering with program output.
@@ -49,7 +50,7 @@ func (p *StdioPrompter) Prompt(ctx context.Context, desc PermissionDescriptor) (
 
 	go func() {
 		fmt.Fprintf(os.Stderr, "\n⚠️  Permission request: %s\n", desc)
-		fmt.Fprintf(os.Stderr, "Allow? (y/n/always): ")
+		fmt.Fprintf(os.Stderr, "Allow? (y/n): ")
 
 		// Create a fresh reader for each prompt to avoid buffering issues
 		reader := bufio.NewReader(os.Stdin)
@@ -61,16 +62,36 @@ func (p *StdioPrompter) Prompt(ctx context.Context, desc PermissionDescriptor) (
 
 		response := strings.TrimSpace(strings.ToLower(line))
 
-		switch response {
-		case "y", "yes":
-			fmt.Fprintln(os.Stderr, "✓ Granted temporarily")
-			responseChan <- PromptResponse{Granted: true, Permanent: false}
-		case "a", "always":
-			fmt.Fprintln(os.Stderr, "✓ Granted permanently (this session)")
-			responseChan <- PromptResponse{Granted: true, Permanent: true}
-		default:
+		// If denied, return early
+		if response != "y" && response != "yes" {
 			fmt.Fprintln(os.Stderr, "✗ Permission denied")
-			responseChan <- PromptResponse{Granted: false, Permanent: false}
+			responseChan <- PromptResponse{Granted: false, SaveToConfig: false}
+			return
+		}
+
+		// User said yes - ask about config
+		fmt.Fprintf(os.Stderr, "Save to .douglessrc? (y/n): ")
+
+		line, err = reader.ReadString('\n')
+		if err != nil {
+			// Grant for session even if second read fails
+			fmt.Fprintln(os.Stderr, "✓ Granted for this session")
+			responseChan <- PromptResponse{Granted: true, SaveToConfig: false}
+			return
+		}
+
+		saveResponse := strings.TrimSpace(strings.ToLower(line))
+		saveToConfig := (saveResponse == "y" || saveResponse == "yes")
+
+		if saveToConfig {
+			fmt.Fprintln(os.Stderr, "✓ Granted and saved to .douglessrc")
+		} else {
+			fmt.Fprintln(os.Stderr, "✓ Granted for this session only")
+		}
+
+		responseChan <- PromptResponse{
+			Granted:      true,
+			SaveToConfig: saveToConfig,
 		}
 	}()
 

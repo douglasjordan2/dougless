@@ -7,7 +7,94 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Recent Updates - October 16, 2024 (Latest)
+### Recent Updates - October 17, 2025 (Latest)
+
+#### Completed - Config-Based Permissions System ✅
+- **`.douglessrc` Configuration File**
+  - Project-centric permission model using JSON config files
+  - Replaces CLI flag-based permission approach
+  - Simple, readable JSON format for defining permissions
+  - Per-project permission configuration
+  - Config discovery starting from script directory
+  
+- **Permission Types Supported**
+  - `read` - File system read access paths
+  - `write` - File system write access paths
+  - `net` - Network access hosts
+  - `env` - Environment variable access
+  - `run` - Subprocess execution permissions
+  
+- **Configuration Format**
+  ```json
+  {
+    "permissions": {
+      "read": ["./examples", "/tmp"],
+      "write": ["/tmp"],
+      "net": ["api.example.com"],
+      "env": ["API_KEY"],
+      "run": ["git"]
+    }
+  }
+  ```
+  
+- **Implementation Details**
+  - `internal/permissions/config.go` - Config loading and parsing
+  - Automatic config file discovery from script directory
+  - Clean JSON structure for easy editing
+  - Integration with existing permission manager
+  - Error handling for missing or malformed configs
+  
+- **Interactive Two-Prompt Save-to-Config ✅**
+  - Two-step developer workflow when prompting in terminal:
+    1) `Allow? (y/n)` → grant or deny for current operation
+    2) If granted: `Save to .douglessrc? (y/n)` → persist permission to config
+  - Saves via `SavePermissionToConfig()` in `internal/permissions/config.go`
+  - Wired into `Manager.CheckWithPrompt()` in `internal/permissions/permissions.go`
+  - Runtime sets config path for saves in `internal/runtime/runtime.go`
+  - Non-blocking: save failures log a warning and do not affect the grant
+  
+- **Benefits Over CLI Flags**
+  - Cleaner, more maintainable permission definitions
+  - Version-controlled permissions with project code
+  - No need to remember complex CLI flag combinations
+  - Easier to share and document project permissions
+  - Project-centric configuration approach
+
+### Previous Updates - October 17, 2024
+
+#### Completed - Phase 6 (WebSockets & Real-time) ✅
+- **WebSocket Server Implementation**
+  - `server.websocket(path, callbacks)` - Add WebSocket endpoint to HTTP server
+  - Real-time bidirectional communication
+  - Connection state management (readyState: CONNECTING, OPEN, CLOSING, CLOSED)
+  - Browser-compatible API matching WebSocket specification
+  - Thread-safe message sending with mutex protection
+  - Event callbacks: `open`, `message`, `close`, `error`
+  - Broadcasting to multiple connected clients
+  - Proper connection lifecycle management
+  - `ws.send(data)` - Send messages to client
+  - `ws.close()` - Gracefully close connection
+  
+- **Implementation Details**
+  - Built on gorilla/websocket library
+  - Integration with existing HTTP server
+  - Automatic upgrade from HTTP to WebSocket protocol
+  - Concurrent connection handling with goroutines
+  - Clean separation between HTTP and WebSocket handlers
+  - Error handling for connection failures and invalid frames
+  
+- **New Example Files**
+  - `examples/websocket_simple.js` - Basic WebSocket echo server
+  - `examples/websocket_server.js` - Full-featured WebSocket server
+  - `examples/websocket_chat.js` - Multi-client chat application with broadcasting
+  
+- **Architecture Improvements**
+  - WebSocket module integrated with HTTP module
+  - Connection objects with proper state machine
+  - Mutex-protected write operations for thread safety
+  - Event-driven callback system matching browser API
+
+### Recent Updates - October 16, 2024
 
 #### Added - File System Promise Support 🎉
 - **Promise API for File Operations**
@@ -469,7 +556,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Phase 4] - October 2024 - COMPLETE ✅
 
 ### Security & Permissions System
-- **Context-Aware Permission Management** (Deno-inspired)
+- **Context-Aware Permission Management**
   - Runtime permission checks for file, network, and environment access
   - User prompts for permission granting in interactive mode
   - CLI flags for explicit permission grants:

@@ -22,7 +22,50 @@ Dougless Runtime is a custom runtime designed with the end goal of serving a cus
 
 Dougless implements a comprehensive permission system that addresses security concerns while maintaining developer experience.
 
-### Interactive Permission Prompts
+### Config-Based Permissions (Recommended)
+
+Dougless uses a **project-centric permission model** with `.douglessrc` configuration files. This approach is cleaner than CLI flags and allows permissions to be version-controlled with your code.
+
+#### Basic Usage
+
+Create a `.douglessrc` file in your project directory:
+
+```json
+{
+  "permissions": {
+    "read": ["./examples", "/tmp"],
+    "write": ["/tmp", "./output"],
+    "net": ["api.example.com", "localhost:3000"],
+    "env": ["API_KEY", "DATABASE_URL"],
+    "run": ["git", "npm"]
+  }
+}
+```
+
+Then run your script:
+
+```bash
+./dougless script.js
+# Automatically discovers and loads .douglessrc from current directory
+```
+
+#### Permission Types
+
+- **`read`** - File system read access (files/directories)
+- **`write`** - File system write access
+- **`net`** - Network access (HTTP/WebSocket hosts)
+- **`env`** - Environment variable access
+- **`run`** - Subprocess execution permissions
+
+#### Benefits
+
+- ✅ **Version controlled** - Commit `.douglessrc` with your code
+- ✅ **Team friendly** - Everyone uses same permissions
+- ✅ **Self-documenting** - Clear list of what your app needs
+- ✅ **No flag hell** - No complex CLI commands to remember
+- ✅ **Project-centric** - Config files over command-line flags
+
+### Interactive Permission Prompts (Fallback)
 
 Dougless features **context-aware permission prompting** that balances security with usability:
 
@@ -34,17 +77,17 @@ When running scripts interactively, Dougless prompts for permissions as needed:
 
 # When script tries to read a file:
 ⚠️  Permission request: read access to '/data/config.json'
-Allow? (y/n/always): always
-✓ Granted permanently (this session)
+Allow? (y/n): y
+Save to .douglessrc? (y/n): y
+✓ Granted and saved to .douglessrc
 
 # Second access to same file - no prompt (cached)
 # Different file - prompts again
 ```
 
-**Prompt responses:**
-- `y` or `yes` - Grant temporarily (this one operation)
-- `a` or `always` - Grant permanently for this session
-- `n` or anything else - Deny
+**Prompt flow:**
+1. `y` or `yes` to grant (or any other key to deny)
+2. If granted: `y` or `yes` to save to `.douglessrc` (persist across runs), or `n` for session-only
 
 #### Production/CI Mode (Non-Interactive)
 Automatically uses **strict deny-by-default** in non-interactive environments:
@@ -154,7 +197,7 @@ go build -o dougless cmd/dougless/main.go
 
 ## Unique Dougless Features
 
-Dougless has a unique API that sets it apart from Node.js, Deno, and Bun:
+Dougless has a unique API with several distinctive design choices:
 
 ### Global File System Access
 Dougless provides the global `files` object with a simplified, convention-based API that supports both callbacks and promises:
@@ -328,6 +371,7 @@ dougless-runtime/
 ## Documentation
 
 - **[ROADMAP.md](ROADMAP.md)** - Development phases, implementation status, and future plans
+- **[Permissions Config Guide](docs/permissions_config.md)** - Complete guide to config-based permissions with `.douglessrc`
 - **[REPL Guide](docs/repl_guide.md)** - Complete guide to using the interactive REPL shell
 - **[Promises API Guide](docs/promises_api.md)** - Complete reference for Promises and async/await
 - **[File API Guide](docs/file_api.md)** - Complete reference for the global `files` API
@@ -348,7 +392,6 @@ dougless-runtime/
 
 ### Similar Projects
 - **[Node.js](https://nodejs.org/)** - The gold standard for JavaScript runtimes
-- **[Deno](https://deno.land/)** - Modern JavaScript/TypeScript runtime
 - **[Bun](https://bun.sh/)** - Fast all-in-one JavaScript runtime
 
 ### Technical Resources

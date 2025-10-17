@@ -217,19 +217,23 @@ Tasks can be scheduled with delays (timers) or executed immediately. The loop co
 
 ### Phase 4 (Security & Permissions) - COMPLETE ✅
 - ✅ Initial permission system implementation
-- ✅ CLI flags for permission grants (--allow-read, --allow-write, --allow-net, etc.) **[DEPRECATED]**
+- ✅ CLI flags for permission grants (--allow-read, --allow-write, --allow-net, etc.) **[LEGACY]**
 - ✅ Interactive permission prompts in terminal mode
 - ✅ Path-based and network-based granular controls
 - ✅ Permission caching and session management
 - ✅ Clear error messages with actionable suggestions
+- ✅ **Config-based permissions** - `.douglessrc` JSON configuration files **[PRIMARY - Oct 17, 2025]**
+  - Project-centric permission model using JSON config files
+  - Automatic config discovery from script directory
+  - Supports read, write, net, env, and run permissions
+  - Version-controlled permissions with project code
+  - Cleaner alternative to CLI flags
 
-**Planned Evolution**: The CLI flag-based approach will be deprecated in favor of a config-first model:
-- **Production**: Permissions defined exclusively in `.douglessrc` or `.douglessrc.json`
-- **Development**: Two-step interactive prompt flow:
-  1. First prompt: `Allow [operation]? yes/no` - grants permission for current session
-  2. If 'yes': `Add to .douglessrc? yes/no` - optionally persists to config file
-  3. This allows developers to build their `.douglessrc` incrementally during development
-- **Goal**: Distinguish Dougless from Deno with a cleaner, more project-centric permission model
+**Current Approach**: Config-first permission model (IMPLEMENTED ✅)
+- **Primary Method**: Permissions defined in `.douglessrc` JSON files
+- **Config Format**: Simple JSON with "permissions" object containing arrays for each type
+- **Discovery**: Automatic `.douglessrc` loading from script directory
+- **Goal Achieved**: Cleaner, more project-centric permission model using configuration files
 
 ### Phase 5 (Promises & ES6+) - COMPLETE ✅
 - ✅ Full Promise/A+ implementation
