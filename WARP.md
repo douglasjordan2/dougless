@@ -140,6 +140,7 @@ Modules are registered in the registry and accessed via `require()`. Current mod
 - **files**: Simplified file system operations (global API, 3 methods)
 - **http**: HTTP client/server functionality (global API)
 - **promise**: Promise/A+ implementation (global API)
+- **crypto**: Cryptographic functions (global API) - hashing, HMAC, random bytes, UUID
 
 ### Promise System
 
@@ -163,13 +164,14 @@ Tasks can be scheduled with delays (timers) or executed immediately. The loop co
 
 ## Development Status
 
-**Phases 1-6 Status:**
+**Phases 1-7 Status:**
 - ✅ Phase 1: Foundation - COMPLETE
 - ✅ Phase 2: File System & Modules - COMPLETE  
 - ✅ Phase 3: Networking & HTTP - COMPLETE
 - ✅ Phase 4: Security & Permissions - COMPLETE
-- ✅ Phase 5: Promises & ES6+ - **COMPLETE** (Oct 15, 2024)
+- ✅ Phase 5: Promises & ES6+ - COMPLETE (Oct 15, 2024)
 - ✅ Phase 6: WebSockets & Real-time - COMPLETE
+- ✅ Phase 7: Crypto & Security - COMPLETE (Oct 18, 2024)
 
 ### Phase 1 (Foundation) - COMPLETE ✅
 - ✅ Basic project structure and Go module setup
@@ -258,6 +260,17 @@ Tasks can be scheduled with delays (timers) or executed immediately. The loop co
 - ✅ Broadcasting to multiple clients
 - ✅ Working examples: websocket_simple.js, websocket_server.js, websocket_chat.js
 
+### Phase 7 (Crypto & Security) - COMPLETE ✅ **[COMPLETED OCT 18, 2024]**
+- ✅ Hash functions (MD5, SHA-1, SHA-256, SHA-512)
+- ✅ HMAC for message authentication (all hash algorithms)
+- ✅ Cryptographically secure random number generation
+- ✅ UUID generation (v4)
+- ✅ Multiple encoding support (hex, base64, raw)
+- ✅ Timing-safe equality comparison (prevents timing attacks)
+- ✅ Node.js-compatible API (`createHash`, `createHmac`, `randomBytes`)
+- ✅ Unique global `crypto` API (no require needed)
+- ✅ Working example: examples/crypto_demo.js
+
 ### Phase 5 Complete! ✅ (October 15, 2024)
 **Status:** ALL features implemented and tested
 - ✅ Promise constructor and basic operations
@@ -312,8 +325,8 @@ The project follows a multi-phase development plan:
 4. Security & Permissions ✅
 5. Promises & ES6+ ✅ (COMPLETE - Oct 15, 2024)
 6. WebSockets & Real-time ✅
-7. Crypto & Security (Next)
-8. Process & System Integration
+7. Crypto & Security ✅ (COMPLETE - Oct 18, 2024)
+8. Process & System Integration (Next)
 9. Performance & Optimization
 
 ### Post Phase 6: Package Manager
@@ -361,6 +374,7 @@ See `docs/transpilation_strategy.md` for complete strategy details and `internal
 4. **Security Model**: Config-first permission system using `.douglessrc`/`.douglessrc.json`. Development mode uses two-step prompts (yes/no → add to config?) to build permissions incrementally. CLI flags are deprecated.
 5. **WebSocket Focus**: Core design goal is supporting real-time WebSocket applications.
 6. **Plugin System**: Custom plugin architecture planned for framework extensibility.
-7. **Global-First Design**: Core APIs (files, http, Promise) are available globally without require() - a unique Dougless feature.
+7. **Global-First Design**: Core APIs (files, http, Promise, crypto) are available globally without require() - a unique Dougless feature.
 8. **Simplified Files API**: 3-method convention-based file system (files.read/write/rm) instead of traditional 8+ method APIs.
 9. **Promise-Enabled Files**: All file operations (files.read/write/rm) support both callbacks and promises - just omit the callback to get a promise. Works seamlessly with async/await.
+10. **Security-First Crypto**: Built-in cryptographic functions with timing-safe comparisons and HMAC support for secure authentication.

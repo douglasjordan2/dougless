@@ -12,6 +12,7 @@ Dougless Runtime is a custom runtime designed with the end goal of serving a cus
 - ✨ **ES6+ Support** - Arrow functions, async/await, classes, and more via esbuild transpilation
 - 🎯 **Native Promises** - Full Promise/A+ implementation with all static methods
 - 🔒 **Security-first permissions** - Interactive prompts with context-aware defaults
+- 🔐 **Cryptographic operations** - Built-in hash, HMAC, random, and UUID generation
 - ✅ **File I/O operations** with async callback APIs
 - ✅ **HTTP client and server** support
 - 🌐 **Global-first API** - core functionality available without require()
@@ -345,6 +346,7 @@ async function fetchData() {
 console.log('Logging');           // ✅ Built-in
 files.read('file.txt', callback); // ✅ Built-in
 http.get('http://...', callback); // ✅ Built-in
+crypto.createHash('sha256');      // ✅ Built-in
 setTimeout(callback, 1000);       // ✅ Built-in
 Promise.resolve(value);           // ✅ Built-in
 
@@ -376,6 +378,7 @@ dougless-runtime/
 - **[Promises API Guide](docs/promises_api.md)** - Complete reference for Promises and async/await
 - **[File API Guide](docs/file_api.md)** - Complete reference for the global `files` API
 - **[HTTP API Guide](docs/http_api.md)** - Complete reference for the global `http` API
+- **[Crypto API Guide](docs/crypto_api.md)** - Complete reference for the global `crypto` API
 - **[Changelog](CHANGELOG.md)** - Detailed history of changes and features
 
 ## Technology Stack
