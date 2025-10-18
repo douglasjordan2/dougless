@@ -196,6 +196,7 @@ func (rt *Runtime) transpile(source, filename string) (string, error) {
 //   - files (read, write, rm) - Convention-based file system API
 //   - http (get, post, createServer)
 //   - Promise (constructor, resolve, reject, all, race, allSettled, any)
+//   - crypto (createHash, createHmac, timingSafeEqual, random, randomBytes, uuid)
 //   - require() (for CommonJS-style module loading)
 func (rt *Runtime) initializeGlobals() {
 	// Console object
@@ -224,6 +225,10 @@ func (rt *Runtime) initializeGlobals() {
 
 	// Promise
 	modules.SetupPromise(rt.vm, rt.eventLoop)
+
+	// Crypto
+	cryptoModule := modules.NewCrypto()
+	rt.vm.Set("crypto", cryptoModule.Export(rt.vm))
 
 	// require() function for module loading
 	rt.vm.Set("require", rt.requireFunction)
