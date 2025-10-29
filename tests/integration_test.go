@@ -13,7 +13,7 @@ import (
 
 // TestCompleteJavaScriptProgram tests a realistic multi-feature JavaScript program
 func TestCompleteJavaScriptProgram(t *testing.T) {
-	rt := runtime.New()
+	rt := runtime.New([]string{"dougless", "test.js"})
 
 	script := `
 		// ================================================
@@ -128,7 +128,7 @@ func TestCompleteJavaScriptProgram(t *testing.T) {
 
 // TestTimerAccuracy tests the accuracy of setTimeout delays
 func TestTimerAccuracy(t *testing.T) {
-	rt := runtime.New()
+	rt := runtime.New([]string{"dougless", "test.js"})
 
 	script := `
 		const startTime = Date.now();
@@ -167,7 +167,7 @@ func TestTimerAccuracy(t *testing.T) {
 
 // TestConcurrentTimers tests multiple timers running concurrently
 func TestConcurrentTimers(t *testing.T) {
-	rt := runtime.New()
+	rt := runtime.New([]string{"dougless", "test.js"})
 
 	script := `
 		let completedTimers = 0;
@@ -197,7 +197,7 @@ func TestConcurrentTimers(t *testing.T) {
 // TestErrorHandling tests how the runtime handles JavaScript errors
 func TestErrorHandling(t *testing.T) {
 	t.Run("syntax error", func(t *testing.T) {
-		rt := runtime.New()
+		rt := runtime.New([]string{"dougless", "test.js"})
 		script := `const x = ; // Syntax error`
 
 		err := rt.Execute(script, "syntax_error.js")
@@ -207,7 +207,7 @@ func TestErrorHandling(t *testing.T) {
 	})
 
 	t.Run("runtime error", func(t *testing.T) {
-		rt := runtime.New()
+		rt := runtime.New([]string{"dougless", "test.js"})
 		script := `
 			function throwError() {
 				throw new Error('Test error');
@@ -222,7 +222,7 @@ func TestErrorHandling(t *testing.T) {
 	})
 
 	t.Run("undefined variable", func(t *testing.T) {
-		rt := runtime.New()
+		rt := runtime.New([]string{"dougless", "test.js"})
 		script := `console.log(undefinedVariable);`
 
 		err := rt.Execute(script, "undefined_var.js")
@@ -234,7 +234,7 @@ func TestErrorHandling(t *testing.T) {
 
 // TestConsoleOperationsIntegration tests all console operations together
 func TestConsoleOperationsIntegration(t *testing.T) {
-	rt := runtime.New()
+	rt := runtime.New([]string{"dougless", "test.js"})
 
 	// Capture stdout
 	oldStdout := os.Stdout
@@ -306,7 +306,7 @@ func TestConsoleOperationsIntegration(t *testing.T) {
 
 // TestModuleSystemIntegration tests the module system and global APIs
 func TestModuleSystemIntegration(t *testing.T) {
-	rt := runtime.New()
+	rt := runtime.New([]string{"dougless", "test.js"})
 
 	script := `
 		// Test global files API (unique to Dougless - not via require)
@@ -377,7 +377,7 @@ func BenchmarkFullProgram(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		rt := runtime.New()
+		rt := runtime.New([]string{"dougless", "test.js"})
 		rt.Execute(script, "benchmark.js")
 	}
 }

@@ -12,7 +12,7 @@ import (
 
 // TestNew verifies runtime initialization
 func TestNew(t *testing.T) {
-	rt := New()
+	rt := New([]string{"dougless", "test.js"})
 
 	if rt == nil {
 		t.Fatal("New() returned nil")
@@ -66,7 +66,7 @@ func TestExecuteBasicJavaScript(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rt := New()
+			rt := New([]string{"dougless", "test.js"})
 			err := rt.Execute(tt.script, "test.js")
 
 			if (err != nil) != (tt.want != nil) {
@@ -83,7 +83,7 @@ func TestConsoleLog(t *testing.T) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	rt := New()
+	rt := New([]string{"dougless", "test.js"})
 	script := `console.log("Hello, World!");`
 
 	err := rt.Execute(script, "test.js")
@@ -111,7 +111,7 @@ func TestConsoleError(t *testing.T) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	rt := New()
+	rt := New([]string{"dougless", "test.js"})
 	script := `console.error("Error message");`
 
 	err := rt.Execute(script, "test.js")
@@ -141,7 +141,7 @@ func TestConsoleWarn(t *testing.T) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	rt := New()
+	rt := New([]string{"dougless", "test.js"})
 	script := `console.warn("Warning message");`
 
 	err := rt.Execute(script, "test.js")
@@ -172,7 +172,7 @@ func TestConsoleTime(t *testing.T) {
 		r, w, _ := os.Pipe()
 		os.Stdout = w
 
-		rt := New()
+		rt := New([]string{"dougless", "test.js"})
 		script := `
 			console.time('test');
 			// Simulate some work
@@ -206,7 +206,7 @@ func TestConsoleTime(t *testing.T) {
 		r, w, _ := os.Pipe()
 		os.Stdout = w
 
-		rt := New()
+		rt := New([]string{"dougless", "test.js"})
 		script := `
 			console.time();
 			console.timeEnd();
@@ -234,7 +234,7 @@ func TestConsoleTime(t *testing.T) {
 		r, w, _ := os.Pipe()
 		os.Stdout = w
 
-		rt := New()
+		rt := New([]string{"dougless", "test.js"})
 		script := `console.timeEnd('nonexistent');`
 
 		err := rt.Execute(script, "test.js")
@@ -262,7 +262,7 @@ func TestConsoleTable(t *testing.T) {
 		r, w, _ := os.Pipe()
 		os.Stdout = w
 
-		rt := New()
+		rt := New([]string{"dougless", "test.js"})
 		script := `console.table([1, 2, 3]);`
 
 		err := rt.Execute(script, "test.js")
@@ -292,7 +292,7 @@ func TestConsoleTable(t *testing.T) {
 		r, w, _ := os.Pipe()
 		os.Stdout = w
 
-		rt := New()
+		rt := New([]string{"dougless", "test.js"})
 		script := `console.table({name: 'Doug', age: 30});`
 
 		err := rt.Execute(script, "test.js")
@@ -316,7 +316,7 @@ func TestConsoleTable(t *testing.T) {
 // TestSetTimeout tests setTimeout functionality
 func TestSetTimeout(t *testing.T) {
 	t.Run("basic timeout", func(t *testing.T) {
-		rt := New()
+		rt := New([]string{"dougless", "test.js"})
 
 		// Use a shared variable to track execution
 		executed := false
@@ -350,7 +350,7 @@ func TestSetTimeout(t *testing.T) {
 	})
 
 	t.Run("timeout with delay", func(t *testing.T) {
-		rt := New()
+		rt := New([]string{"dougless", "test.js"})
 		startTime := time.Now()
 
 		script := `
@@ -381,7 +381,7 @@ func TestSetTimeout(t *testing.T) {
 
 // TestSetInterval tests setInterval functionality
 func TestSetInterval(t *testing.T) {
-	rt := New()
+	rt := New([]string{"dougless", "test.js"})
 
 	script := `
 		let count = 0;
@@ -412,7 +412,7 @@ func TestSetInterval(t *testing.T) {
 
 // TestClearTimeout tests clearTimeout functionality
 func TestClearTimeout(t *testing.T) {
-	rt := New()
+	rt := New([]string{"dougless", "test.js"})
 
 	script := `
 		let executed = false;
@@ -442,7 +442,7 @@ func TestClearTimeout(t *testing.T) {
 
 // TestModuleRequire tests the require() function
 func TestModuleRequire(t *testing.T) {
-	rt := New()
+	rt := New([]string{"dougless", "test.js"})
 
 	t.Run("global files API available", func(t *testing.T) {
 		script := `
@@ -517,7 +517,7 @@ func TestModuleRequire(t *testing.T) {
 
 // TestComplexScript tests a more realistic JavaScript program
 func TestComplexScript(t *testing.T) {
-	rt := New()
+	rt := New([]string{"dougless", "test.js"})
 
 	script := `
 		// Test variables and functions
@@ -573,7 +573,7 @@ func BenchmarkExecuteSimpleScript(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		rt := New()
+		rt := New([]string{"dougless", "test.js"})
 		rt.Execute(script, "bench.js")
 	}
 }
@@ -585,7 +585,7 @@ func BenchmarkConsoleLog(b *testing.B) {
 	os.Stdout, _ = os.Open(os.DevNull)
 	defer func() { os.Stdout = oldStdout }()
 
-	rt := New()
+	rt := New([]string{"dougless", "test.js"})
 	script := `console.log('benchmark test');`
 
 	b.ResetTimer()
@@ -600,7 +600,7 @@ func BenchmarkSetTimeout(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		rt := New()
+		rt := New([]string{"dougless", "test.js"})
 		rt.Execute(script, "bench.js")
 	}
 }

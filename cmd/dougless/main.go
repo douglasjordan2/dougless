@@ -53,7 +53,7 @@ func main() {
 
 	permissions.SetGlobalManager(permManager)
 
-	rt := runtime.New()
+	rt := runtime.New(os.Args)
 
 	// go into repl mode if no args
 	if len(remainingArgs) == 0 {

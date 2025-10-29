@@ -46,15 +46,18 @@ type Runtime struct {
 // New creates and initializes a new Runtime instance.
 // It sets up the Goja VM, event loop, module registry, and all global APIs.
 //
+// The argv parameter should contain command-line arguments (typically os.Args).
+// The first element is usually the executable path, followed by script path and arguments.
+//
 // The returned runtime is ready to execute JavaScript code via Execute or ExecuteFile.
 //
 // Example:
 //
-//	rt := runtime.New()
+//	rt := runtime.New(os.Args)
 //	if err := rt.ExecuteFile("script.js"); err != nil {
 //	    log.Fatal(err)
 //	}
-func New() *Runtime {
+func New(argv []string) *Runtime {
 	vm := goja.New()
 	eventLoop := event.NewLoop()
 	moduleRegistry := modules.NewRegistry()
@@ -87,7 +90,7 @@ func New() *Runtime {
 		permManager.SetConfigPath(configPath)
 	}
 
-	rt.initializeGlobals()
+	rt.initializeGlobals(argv)
 	rt.initializeModules()
 
 	return rt
@@ -197,8 +200,9 @@ func (rt *Runtime) transpile(source, filename string) (string, error) {
 //   - http (get, post, createServer)
 //   - Promise (constructor, resolve, reject, all, race, allSettled, any)
 //   - crypto (createHash, createHmac, timingSafeEqual, random, randomBytes, uuid)
+//   - process (env, argv, exit, cwd, chdir, pid, platform, arch, version, on)
 //   - require() (for CommonJS-style module loading)
-func (rt *Runtime) initializeGlobals() {
+func (rt *Runtime) initializeGlobals(argv []string) {
 	// Console object
 	console := modules.NewConsole()
 	rt.vm.Set("console", console.Export(rt.vm))
@@ -229,6 +233,10 @@ func (rt *Runtime) initializeGlobals() {
 	// Crypto
 	cryptoModule := modules.NewCrypto()
 	rt.vm.Set("crypto", cryptoModule.Export(rt.vm))
+
+	// Process
+	processModule := modules.NewProcess(argv)
+	rt.vm.Set("process", processModule.Export(rt.vm))
 
 	// require() function for module loading
 	rt.vm.Set("require", rt.requireFunction)
