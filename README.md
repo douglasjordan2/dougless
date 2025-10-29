@@ -13,6 +13,7 @@ Dougless Runtime is a custom runtime designed with the end goal of serving a cus
 - 🎯 **Native Promises** - Full Promise/A+ implementation with all static methods
 - 🔒 **Security-first permissions** - Interactive prompts with context-aware defaults
 - 🔐 **Cryptographic operations** - Built-in hash, HMAC, random, and UUID generation
+- 🖥️ **Process & system integration** - Environment vars, signals, exit handling
 - ✅ **File I/O operations** with async callback APIs
 - ✅ **HTTP client and server** support
 - 🌐 **Global-first API** - core functionality available without require()
@@ -347,6 +348,7 @@ console.log('Logging');           // ✅ Built-in
 files.read('file.txt', callback); // ✅ Built-in
 http.get('http://...', callback); // ✅ Built-in
 crypto.createHash('sha256');      // ✅ Built-in
+process.exit(0);                  // ✅ Built-in
 setTimeout(callback, 1000);       // ✅ Built-in
 Promise.resolve(value);           // ✅ Built-in
 
@@ -379,6 +381,7 @@ dougless-runtime/
 - **[File API Guide](docs/file_api.md)** - Complete reference for the global `files` API
 - **[HTTP API Guide](docs/http_api.md)** - Complete reference for the global `http` API
 - **[Crypto API Guide](docs/crypto_api.md)** - Complete reference for the global `crypto` API
+- **[Process Module Guide](docs/process_module.md)** - Complete reference for the global `process` object
 - **[Changelog](CHANGELOG.md)** - Detailed history of changes and features
 
 ## Technology Stack
