@@ -352,40 +352,100 @@ func (http *HTTP) createServer(call goja.FunctionCall) goja.Value {
 	var keepAliveDone func()
 	var keepAliveOnce sync.Once
 
+  type responseState struct {
+    statusCode int
+    headers    map[string]string
+    body       string
+    mu         sync.Mutex
+  }
+
 	goServer := &netHttp.Server{
 		Handler: netHttp.HandlerFunc(func(w netHttp.ResponseWriter, r *netHttp.Request) {
-			reqObj := http.createRequestObject(r)
-			resObj := http.vm.NewObject()
+      done := make(chan struct{})
+      state := &responseState{
+        statusCode: 200,
+        headers:    make(map[string]string),
+      }
 
-			resObj.Set("statusCode", 200)
+      http.eventLoop.ScheduleTask(&event.Task{
+        Callback: func() {
+          defer close(done)
 
-			resObj.Set("setHeader", func(call goja.FunctionCall) goja.Value {
-				if len(call.Arguments) < 2 {
-					panic(http.vm.ToValue("setHeader requires a name and value"))
-				}
-				headerName := call.Arguments[0].String()
-				headerValue := call.Arguments[1].String()
-				w.Header().Set(headerName, headerValue)
+          reqObj := http.createRequestObject(r)
+          resObj := http.vm.NewObject()
 
-				return goja.Undefined()
-			})
+          resObj.Set("statusCode", 200)
 
-			resObj.Set("end", func(call goja.FunctionCall) goja.Value {
-				statusCode := 200
-				if statusVal := resObj.Get("statusCode"); statusVal != nil && !goja.IsUndefined(statusVal) {
-					statusCode = int(statusVal.ToInteger())
-				}
-				w.WriteHeader(statusCode)
+          resObj.Set("setHeader", func(call goja.FunctionCall) goja.Value {
+            if len(call.Arguments) < 2 {
+              panic(http.vm.ToValue("setHeader requires a name and value"))
+            }
+            headerName := call.Arguments[0].String()
+            headerValue := call.Arguments[1].String()
 
-				if len(call.Arguments) > 0 && !goja.IsUndefined(call.Arguments[0]) {
-					data := call.Arguments[0].String()
-					w.Write([]byte(data))
-				}
+            state.mu.Lock()
+            state.headers[headerName] = headerValue
+            state.mu.Unlock()
 
-				return goja.Undefined()
-			})
+            return goja.Undefined()
+          })
 
-			requestHandler(goja.Undefined(), reqObj, resObj)
+          resObj.Set("writeHead", func(call goja.FunctionCall) goja.Value {
+            if len(call.Arguments) < 1 {
+              panic(http.vm.ToValue("writeHead requires a status code"))
+            }
+            statusCode := int(call.Arguments[0].ToInteger())
+            
+            state.mu.Lock()
+            state.statusCode = statusCode
+
+            if len(call.Arguments) > 1 && !goja.IsUndefined(call.Arguments[1]) {
+              headersObj := call.Arguments[1].ToObject(http.vm)
+              for _, key := range headersObj.Keys() {
+                val := headersObj.Get(key) 
+                if !goja.IsUndefined(val) {
+                  state.headers[key] = val.String()
+                }
+              }
+            }
+            state.mu.Unlock()
+
+            return goja.Undefined()
+          })
+
+          resObj.Set("end", func(call goja.FunctionCall) goja.Value {
+            state.mu.Lock()
+            if statusVal := resObj.Get("statusCode"); statusVal != nil && !goja.IsUndefined(statusVal) {
+              state.statusCode = int(statusVal.ToInteger())
+            }
+
+            if len(call.Arguments) > 0 && !goja.IsUndefined(call.Arguments[0]) {
+              state.body = call.Arguments[0].String()
+            }
+            state.mu.Unlock()
+
+            return goja.Undefined()
+          })
+
+          requestHandler(goja.Undefined(), reqObj, resObj)
+        },
+      })
+      
+      select {
+      case <-done:
+        state.mu.Lock()
+        for name, value := range state.headers {
+          w.Header().Set(name, value)
+        }
+        w.WriteHeader(state.statusCode)
+        if state.body != "" {
+          w.Write([]byte(state.body))
+        }
+        state.mu.Unlock()
+      case <-time.After(30 * time.Second):
+        w.WriteHeader(netHttp.StatusGatewayTimeout)
+        w.Write([]byte("Request handler timeout"))
+      }
 		}),
 	}
 
