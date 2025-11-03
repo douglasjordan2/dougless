@@ -28,7 +28,6 @@ func (c *Crypto) Export(vm *goja.Runtime) goja.Value {
   c.vm = vm
   return vm.ToValue(c.createCryptoAPI())
 }
-
 func (c *Crypto) createCryptoAPI() map[string]interface{} {
   return map[string]interface{}{
     "createHash":      c.createHash,
