@@ -54,10 +54,39 @@ go test -v ./...
 go test ./internal/runtime
 go test ./internal/modules
 go test ./internal/event
-
-# Run benchmarks
-go test -bench=. ./...
 ```
+
+### Benchmarking
+```bash
+# Run all benchmarks with convenient script
+./scripts/bench.sh
+
+# Run specific benchmark suite
+go test -bench=. -benchmem ./internal/runtime
+go test -bench=. -benchmem ./internal/event
+
+# Run specific benchmark
+go test -bench=BenchmarkRuntimeCreation -benchmem ./internal/runtime
+
+# Run benchmarks multiple times for statistical significance
+go test -bench=. -benchmem -count=5 ./...
+
+# Save benchmark results for comparison
+go test -bench=. -benchmem ./... > bench_results.txt
+
+# Compare results (requires: go install golang.org/x/perf/cmd/benchstat@latest)
+benchstat baseline.txt new.txt
+
+# Profile CPU performance
+go test -bench=BenchmarkSimpleExecution -cpuprofile=cpu.prof ./internal/runtime
+go tool pprof cpu.prof
+
+# Profile memory usage
+go test -bench=BenchmarkSimpleExecution -memprofile=mem.prof ./internal/runtime
+go tool pprof mem.prof
+```
+
+See `docs/benchmarking.md` for comprehensive benchmarking guide.
 
 ### Dependency Management
 ```bash

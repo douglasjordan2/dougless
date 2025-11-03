@@ -38,3 +38,4 @@ test-output.txt
 # Temporary files
 tmp/
 temp/
+bench_results/
